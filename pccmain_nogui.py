@@ -18,6 +18,7 @@ import win32com
 from infi.systray import SysTrayIcon
 import multitimer
 from PIL import Image, ImageDraw,ImageFont
+from tkinter import Tk, Label, Button
 
 # clear the gen_py folder that is causing issues with the xlsx conversion with win32com
 try:
@@ -83,6 +84,7 @@ def to_text(message):
     with open(userpath + '\\Desktop\\PyReport.csv','a') as file:
         file.write(s)
         file.close()
+
 
 # pull user's name
 def getName(user=username):
@@ -790,6 +792,32 @@ monthendtimer.start()
 
 # kindredtimer = multitimer.MultiTimer(interval=(60*60), function=get_time)
 
+
+# user interface class using tkinter
+class MyFirstGUI:
+    def __init__(self, master):
+        self.master = master
+        master.title("A simple GUI")
+
+        self.label = Label(master, text="This is our first GUI!")
+        self.label.pack()
+
+        self.greet_button = Button(master, text="Greet", command=self.greet)
+        self.greet_button.pack()
+
+        self.close_button = Button(master, text="Close", command=master.withdraw)
+        self.close_button.pack()
+
+    def greet(self):
+        print("Greetings!")
+
+
+def open_gui(systray):
+    root = Tk()
+    my_gui = MyFirstGUI(root)
+    root.mainloop()
+
+
 # create image
 image = 'pil_icon.ico'
 img = Image.new('RGBA', (50, 50), color=(255, 255, 255, 90))  # color background =  white  with transparency
@@ -800,6 +828,6 @@ font_type = ImageFont.truetype("arial.ttf", 30)
 d.text((0, 0), f"{0}", fill=(255, 255, 0), font=font_type)
 img.save(image)
 
-menu_options = (("Run reports (auto on 15th @8pm)", None, tray_download_reports),)
+menu_options = (("Run reports (auto on 15th @8pm)", None, tray_download_reports),("Open UI", None, open_gui),)
 systray = SysTrayIcon(image, "PACS Reporting", menu_options)
 systray.start()
