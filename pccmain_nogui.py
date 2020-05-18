@@ -78,26 +78,8 @@ def get_time():
     print('Not time')
 
 
-def to_csv(building='', report='', period='',date=str(datetime.date.today()) + ' ' + str(time.localtime().tm_hour)
-                    + ':' + str(time.localtime().tm_min), filename=userpath + '\\Desktop\\PyReport.csv'):
-    check = os.path.exists(filename)
-
-    if check:
-        with open(filename, 'a', newline='') as csvfile:
-            filewriter = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-            filewriter.writerow([date, building, report, period])
-    else:
-        with open(filename, 'w', newline='') as csvfile:
-            filewriter = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-            filewriter.writerow(["Date", "Building", "Report Name", "Report Period"])
-
-        with open(filename, 'a', newline='') as csvfile:
-            filewriter = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-            filewriter.writerow([date, building, report, period])
-
-
 def to_text(message):
-    s = str(datetime.datetime.now().strftime("%H:%M:%S")) + ">>" + str(message) + "\n"
+    s = str(datetime.datetime.now().strftime("%H:%M:%S")) + ">>  " + str(message) + "\n"
     with open(userpath + '\\Desktop\\PyReport.csv','a') as file:
         file.write(s)
         file.close()
@@ -139,15 +121,15 @@ def renameDownloadedFile(newfilename, dirpath):  # renames file most recent file
                 newptext = userpath + '\\Desktop\\temp reporting\\'
                 destfile = os.path.join(newptext, newfilename + extention)
             shutil.move(latestfile, destfile)                               # MOVE AND RENAME
-        to_csv('Moved to: ' + destfile)                                   # END BACKUP LOCATION
+        to_text('Moved to: ' + destfile)                                   # END BACKUP LOCATION
     except:
-        to_csv("Issue renaming/moving to " + str(dirpath))
-        to_csv(newfilename + extention + " is in Downloads folder")
+        to_text("Issue renaming/moving to " + str(dirpath))
+        to_text(newfilename + extention + " is in Downloads folder")
 
 
 # open autofillfinancials folder
 def openFinancialsFolder():  # open hidden folder on desktop that holds downloaded financials
-    to_csv("Opening AutoFillFinancials folder")
+    to_text("Opening AutoFillFinancials folder")
     os.startfile(userpath + '\\Desktop\\AutoFillFinancials\\')
 
 
@@ -175,15 +157,15 @@ def find_updated_driver():
             if file[0] == 'chromedriver':
                 file_list.append(file[1][:2])
         try:
-            to_csv('Updating chromedriver to newer version')
+            to_text('Updating chromedriver to newer version')
             shutil.copyfile(folder + 'chromedriver ' + max(file_list) + '.exe',
                             os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + max(file_list) + '.exe')
-            to_csv('chromedriver updated to version '+ max(file_list))
+            to_text('chromedriver updated to version '+ max(file_list))
         except:
-            to_csv("Couldn't update chromedriver automatically")
+            to_text("Couldn't update chromedriver automatically")
         return max(file_list)
     else:
-        to_csv('Could not find P:\\PACS\\Finance\\Automation\\Chromedrivers\\')
+        to_text('Could not find P:\\PACS\\Finance\\Automation\\Chromedrivers\\')
 
 
 # check the current driver version on your computer
@@ -207,7 +189,7 @@ def startPCC():
 
 # download census report for kindred buildings
 def downloadKindredReport():
-    to_csv("Downloading weekly census report for Kindred buildings")
+    to_text("Downloading weekly census report for Kindred buildings")
     try:
         PCC  # check if an instance already exists
     except NameError:  # if not
@@ -230,8 +212,8 @@ def downloadKindredReport():
         time.sleep(2)
         os.startfile(userpath + '\\Documents\\Kindred Reporting\\Week Ending ' + sundaystr + '.xlsx')
     except FileNotFoundError:
-        to_csv('Workbook was not saved.')
-    to_csv('Process has finished')
+        to_text('Workbook was not saved.')
+    to_text('Process has finished')
 
 
 # run the reports
@@ -255,43 +237,43 @@ def download_reports():
                 if not PCC.checkSelectedBuilding(pcc_building): # verify that we have the right building selected
                     PCC.buildingSelect(pcc_building)            # if not then get the correct building
                 if report == 'AP Aging':
-                    to_csv(facname, 'AP Aging')
+                    to_text(facname + 'AP Aging')
                     PCC.ap_aging(facname)
                     download_num = download_num - 1
                     update_icon(download_num)
                 if report == 'AR Aging': # uses management console
-                    to_csv('AR Aging')
+                    to_text('AR Aging')
                     PCC.ar_aging(facname, bu)
                     download_num = download_num - 1
                     update_icon(download_num)
                 if report == 'AR Rollforward':
-                    to_csv('AR Rollforward')
+                    to_text('AR Rollforward')
                     PCC.ar_rollforward(facname)
                     download_num = download_num - 1
                     update_icon(download_num)
                 if report == 'Cash Reciepts Journal':
-                    to_csv('Cash Recipts Journal')
+                    to_text('Cash Recipts Journal')
                     PCC.cash_receipts(facname)
                     download_num = download_num - 1
                     update_icon(download_num)
                 if report == 'Detailed Census':
-                    to_csv('Detailed Census')
+                    to_text('Detailed Census')
                     PCC.census(facname)
                     download_num = download_num - 1
                     update_icon(download_num)
                 if report == 'Journal Entries':
-                    to_csv('Journal Entries')
+                    to_text('Journal Entries')
                     PCC.journal_entries(facname)
                     download_num = download_num - 1
                     update_icon(download_num)
                 if report == 'Revenue Reconciliation':
-                    to_csv('Revenue Reconciliation')
+                    to_text('Revenue Reconciliation')
                     PCC.revenuerec(facname)
                     download_num = download_num - 1
                     update_icon(download_num)
             else:
-                to_csv('There is an issue with the chromedriver')
-    to_csv('Reports downloaded')
+                to_text('There is an issue with the chromedriver')
+    to_text('Reports downloaded')
     PCC.teardown_method()
     del PCC
 
@@ -317,13 +299,13 @@ class LoginPCC:
                 # chromedriver_autoinstaller.install()
                 latestdriver = find_current_driver()
                 self.driver = webdriver.Chrome(os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + str(latestdriver) + '.exe', options=chrome_options)
-                to_csv('Local chromedriver successfully initiated')
+                to_text('Local chromedriver successfully initiated')
             except:
                 latestdriver = find_updated_driver()
                 self.driver = webdriver.Chrome(
                     os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + str(latestdriver) + '.exe',
                     options=chrome_options)
-                to_csv('Chromedrive successfully initiated')
+                to_text('Chromedrive successfully initiated')
             try:
                 self.driver.get('https://login.pointclickcare.com/home/userLogin.xhtml?ESOLGuid=40_1572368815140')
                 time.sleep(3)
@@ -346,7 +328,7 @@ class LoginPCC:
             except:
                 print("There is an issue with the chrome driver")
         except:
-            to_csv('There was an issue initiating chromedriver')
+            to_text('There was an issue initiating chromedriver')
             check_status = False
 
     def teardown_method(self):  # exit the program (FULLY WORKING)
@@ -374,9 +356,9 @@ class LoginPCC:
             if building in self.driver.find_element(By.ID, "pccFacLink").get_attribute("title"):
                 pass
             else:
-                to_csv('Could not find ' + building)
+                to_text('Could not find ' + building)
         except:
-            to_csv('Could not get the proper page')
+            to_text('Could not get the proper page')
 
     def checkSelectedBuilding(self, building):
         try:
@@ -416,8 +398,7 @@ class LoginPCC:
                 str(prev_month_num) + " " + str(report_year) + " " + facname + ' Income Statement M-to-M',
                 userpath + "\\Desktop\\")  # rename and move file
         except:
-            to_csv('There was an issue downloading')
-            to_csv(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'IS M2M', str(prev_month_num) + " " + str(report_year))
+            to_text('There was an issue downloading')
 
     def ap_aging(self, facname):  # download AP aging report. Paste to Excel (FULLY WORKING)
         try:
@@ -455,33 +436,31 @@ class LoginPCC:
             try:
                 wb.save(newpathtext + str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                 wb.close()
-                to_csv(facname + ' AP aging saved')
+                to_text(facname + ' AP aging saved')
             except:
                 try:
                     wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AP Aging\\" +
                             str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                     wb.close()
-                    to_csv(facname + ' AP aging saved')
+                    to_text(facname + ' AP aging saved')
                 except:
                     try:
                         os.mkdir(userpath + '\\Desktop\\temp reporting\\')
                         wb.save(userpath + '\\Desktop\\temp reporting\\' +
                                 str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                         wb.close()
-                        to_csv(facname + ' AP aging saved')
+                        to_text(facname + ' AP aging saved')
                     except:
                         try:
                             wb.save(userpath + '\\Desktop\\temp reporting\\' +
                                     str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                             wb.close()
-                            to_csv(facname + ' AP aging saved')
+                            to_text(facname + ' AP aging saved')
                         except:
-                            to_csv('Error saving AP aging')
+                            to_text('Error saving AP aging')
                 time.sleep(2)
         except:
-            to_csv('Issue downloading AP Aging: ' + facname)
-            to_csv(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'AP AGING',
-                         str(prev_month_num) + " " + str(report_year))
+            to_text('Issue downloading AP Aging: ' + facname)
 
     def ar_aging(self,facname, bu):  # pull ar aging files - (FULLY WORKING) Saves as Excel file
         try:
@@ -524,13 +503,11 @@ class LoginPCC:
                     renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + " AR Aging",
                                          "P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AR Aging\\")
                 except:
-                    to_csv('Issue moving and renaming the file')
+                    to_text('Issue moving and renaming the file')
             except:
-                to_csv('Issue converting excel file')
+                to_text('Issue converting excel file')
         except:
-            to_csv('Issue downloading AR Aging: ' + facname)
-            to_csv(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'AR AGING',
-                         str(prev_month_num) + " " + str(report_year))
+            to_text('Issue downloading AR Aging: ' + facname)
 
     def ar_rollforward(self, facname):  # download ar rollforward report.(FULLY WORKING) Paste to Excel
         try:
@@ -562,33 +539,31 @@ class LoginPCC:
             try:
                 wb.save(newpathtext + str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
                 wb.close()
-                to_csv(facname + ' AR Rollforward saved')
+                to_text(facname + ' AR Rollforward saved')
             except:
                 try:
                     wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AR Rollforward\\" +
                             str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
                     wb.close()
-                    to_csv(facname + ' AR Rollforward saved')
+                    to_text(facname + ' AR Rollforward saved')
                 except:
                     try:
                         os.mkdir(userpath + '\\Desktop\\temp reporting\\')
                         wb.save(userpath + '\\Desktop\\temp reporting\\' +
                                 str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
                         wb.close()
-                        to_csv(facname + ' AR Rollforward saved')
+                        to_text(facname + ' AR Rollforward saved')
                     except:
                         try:
                             wb.save(userpath + '\\Desktop\\temp reporting\\' +
                                     str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
                             wb.close()
-                            to_csv(facname + ' AR Rollforward saved')
+                            to_text(facname + ' AR Rollforward saved')
                         except:
-                            to_csv('Error saving AR Rollforward')
+                            to_text('Error saving AR Rollforward')
                 time.sleep(2)
         except:
-            to_csv('Issue downloading AR Rollforward: ' + facname)
-            to_csv(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'AR ROLLFORWARD',
-                         str(prev_month_num) + " " + str(report_year))
+            to_text('Issue downloading AR Rollforward: ' + facname)
 
     def cash_receipts(self, facname):  # prints to PDF -WORKED PERFECTLY
         try:
@@ -614,9 +589,7 @@ class LoginPCC:
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Cash Receipts',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Cash Receipts\\')
         except:
-            to_csv('Issue downloading Cash Receipts: ' + facname)
-            to_csv(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'CASH RECEIPTS',
-                         str(prev_month_num) + " " + str(report_year))
+            to_text('Issue downloading Cash Receipts: ' + facname)
 
     def census(self, facname):  # prints to PDF -WORKED PERFECTLY
         try:
@@ -644,9 +617,7 @@ class LoginPCC:
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Census',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Census\\')
         except:
-            to_csv('Issue downloading Census: ' + facname)
-            to_csv(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'CENSUS',
-                         str(prev_month_num) + " " + str(report_year))
+            to_text('Issue downloading Census: ' + facname)
 
     def journal_entries(self, facname):  # prints to PDF
         try:
@@ -669,9 +640,7 @@ class LoginPCC:
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Journal Entries',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Journal Entries\\')
         except:
-            to_csv('Issue downloading Journal Entries: ' + facname)
-            to_csv(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'JOURNAL ENTRIES',
-                         str(prev_month_num) + " " + str(report_year))
+            to_text('Issue downloading Journal Entries: ' + facname)
 
     def revenuerec(self, facname):  # prints to PDF
         try:
@@ -697,9 +666,7 @@ class LoginPCC:
                 str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Revenue Reconciliation',
                 'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Revenue Reconciliation\\')
         except:
-            to_csv('Issue downloading Revenue Reconciliation: ' + facname)
-            to_csv(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'REVENUE RECON',
-                         str(prev_month_num) + " " + str(report_year))
+            to_text('Issue downloading Revenue Reconciliation: ' + facname)
 
     def close_ap_periods(self):  # might have issues at end of the year
         try:
@@ -717,7 +684,7 @@ class LoginPCC:
             time.sleep(2)
             self.driver.switch_to.window(window_before)  # go back to original tab
         except:
-            to_csv('There was an issue downloading')
+            to_text('There was an issue downloading')
 
     def close_gl_periods(self):  # might have issues at end of the year
         try:
@@ -734,7 +701,7 @@ class LoginPCC:
             time.sleep(2)
             self.driver.switch_to.window(window_before)  # go back to original tab
         except:
-            to_csv('There was an issue downloading')
+            to_text('There was an issue downloading')
 
     def kindredReport(self):  # download kindred report.  (FULLY WORKING)
         try:
@@ -744,7 +711,7 @@ class LoginPCC:
             else:
                 sunday = (tdy + datetime.timedelta(days=(-tdy.weekday() - 1), weeks=0))  # gets previous monday
             sundaystr = str(sunday.month) + "/" + str(sunday.day) + "/" + str(sunday.year)
-            # to_csv("Pulling report for date ending " + str(sundaystr))
+            # to_text("Pulling report for date ending " + str(sundaystr))
             window_before = self.driver.window_handles[0]  # make window tab object
             self.driver.get("https://www12.pointclickcare.com/emc/home.jsp")
             self.driver.find_element(By.ID, "pccFacLink").click()
@@ -779,7 +746,7 @@ class LoginPCC:
             self.driver.close()
             self.driver.switch_to.window(window_before)  # go back to original tab
         except:
-            to_csv('There was an issue downloading')
+            to_text('There was an issue downloading')
 
 
 def update_icon(number=0):
