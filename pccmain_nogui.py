@@ -96,6 +96,12 @@ def to_csv(building='', report='', period='',date=str(datetime.date.today()) + '
             filewriter.writerow([date, building, report, period])
 
 
+def to_text(message):
+    s = str(datetime.datetime.now().strftime("%H:%M:%S")) + ">>" + str(message) + "\n"
+    with open(userpath + '\\Desktop\\PyReport.csv','a') as file:
+        file.write(s)
+        file.close()
+
 # pull user's name
 def getName(user=username):
     username_parse = user.split(".")
