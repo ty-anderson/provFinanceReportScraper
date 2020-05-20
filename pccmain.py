@@ -422,7 +422,7 @@ class LoginPCC:
             self.close_all_windows(window_before)
             renameDownloadedFile(
                 str(prev_month_num) + " " + str(report_year) + " " + facname + ' Income Statement M-to-M',
-                userpath + "\\Desktop\\")  # rename and move file
+                userpath + "\\Desktop\\AutoFillFinancials\\")  # rename and move file
         except:
             callback('There was an issue downloading')
             write_to_csv(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'IS M2M', str(prev_month_num) + " " + str(report_year))
