@@ -13,12 +13,13 @@ import datetime
 import os
 import xlwings as xw
 import pyautogui
-import csv
 import win32com
-from infi.systray import SysTrayIcon
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QCheckBox, QSystemTrayIcon, \
+    QMenu, QAction, QStyle, QPushButton, QVBoxLayout, QFrame, QFormLayout, QLineEdit
+from PyQt5.QtCore import QSize
+import sys
 import multitimer
-from PIL import Image, ImageDraw,ImageFont
-from tkinter import Tk, Label, Button
+
 
 # clear the gen_py folder that is causing issues with the xlsx conversion with win32com
 try:
@@ -65,6 +66,21 @@ except FileNotFoundError:  # if VPN is not connected use the one last saved
 facility_df = pd.read_excel(faclistpath, sheet_name='Automation', index_col=0)
 facilities_df = pd.read_excel(faclistpath, sheet_name='Automation', index_col=0, usecols=['Common Name', 'Accountant'])
 
+# create all lists and dictionaries
+facilityindex = facility_df.index.to_list()
+accountants = facility_df['Accountant'].to_list()
+fac_number = facility_df['Business Unit'].to_list()
+pcc_name = facility_df['PCC Name'].to_list()
+facilities = dict(zip(facilityindex, zip(accountants, fac_number, pcc_name)))
+accountantlist = facility_df['Accountant'].drop_duplicates().to_list()  # make list of all accountants
+reports_list = ['AP Aging',
+                'AR Aging',
+                'AR Rollforward',
+                'Cash Reciepts Journal',
+                'Detailed Census',
+                'Journal Entries',
+                'Revenue Reconciliation']
+
 
 def get_time():
     today_now = time.localtime()
@@ -73,10 +89,34 @@ def get_time():
     now_hour = today_now.tm_hour  # hour
     now_min = today_now.tm_min  # min
     if now_day == 15:
-        if now_hour == 20: # 8:00 pm autorun
+        if now_hour == 20:
             if now_min == 1:
                 download_reports()
-    print('Not time')
+    print('Checked the time')
+
+
+def update_date(monthinput='', yearinput=''):
+    global prev_month_num_str
+    global prev_month_word
+    global prev_month_num
+    global prev_month_abbr
+    global report_year
+    # collect date info
+    try:
+        prev_month_num = int(monthinput)
+    except ValueError:
+        prev_month_num = prev_month_num
+    if len(str(prev_month_num)) == 1:
+        prev_month_num_str = str("0" + str(prev_month_num))
+    else:
+        prev_month_num_str = str(prev_month_num)
+    prev_month_abbr = calendar.month_abbr[prev_month_num]
+    prev_month_word = calendar.month_name[prev_month_num]
+    try:
+        report_year = int(yearinput)
+    except ValueError:
+        report_year = report_year
+    to_text('Reporting date is ' + prev_month_abbr + ' ' + str(report_year))
 
 
 def to_text(message):
@@ -218,66 +258,73 @@ def downloadKindredReport():
     to_text('Process has finished')
 
 
-# run the reports
-def download_reports():
-    global check_status
-    global PCC
-    download_num = len(facilities) * len(reports_list)
-    update_icon(download_num)
-    check_status = True
+# initiate download of reports
+def downloadIncomeStmtM2M(facilitylist):
     try:
         PCC  # check if an instance already exists
     except NameError:  # if not
         startPCC()  # create one
-    for facname in facilities:                  # loop through all buildings
-        pcc_building = facilities[facname][2]   # pcc full name
-        bu = facilities[facname][1]             # business unit
-        PCC.buildingSelect(pcc_building)        # select building in PCC
-        time.sleep(1)
-        for report in reports_list:             # get reports for this building
-            if check_status:
-                if not PCC.checkSelectedBuilding(pcc_building): # verify that we have the right building selected
-                    PCC.buildingSelect(pcc_building)            # if not then get the correct building
-                if report == 'AP Aging':
-                    to_text(facname + 'AP Aging')
-                    PCC.ap_aging(facname)
-                    download_num = download_num - 1
-                    update_icon(download_num)
-                if report == 'AR Aging': # uses management console
-                    to_text('AR Aging')
-                    PCC.ar_aging(facname, bu)
-                    download_num = download_num - 1
-                    update_icon(download_num)
-                if report == 'AR Rollforward':
-                    to_text('AR Rollforward')
-                    PCC.ar_rollforward(facname)
-                    download_num = download_num - 1
-                    update_icon(download_num)
-                if report == 'Cash Reciepts Journal':
-                    to_text('Cash Recipts Journal')
-                    PCC.cash_receipts(facname)
-                    download_num = download_num - 1
-                    update_icon(download_num)
-                if report == 'Detailed Census':
-                    to_text('Detailed Census')
-                    PCC.census(facname)
-                    download_num = download_num - 1
-                    update_icon(download_num)
-                if report == 'Journal Entries':
-                    to_text('Journal Entries')
-                    PCC.journal_entries(facname)
-                    download_num = download_num - 1
-                    update_icon(download_num)
-                if report == 'Revenue Reconciliation':
-                    to_text('Revenue Reconciliation')
-                    PCC.revenuerec(facname)
-                    download_num = download_num - 1
-                    update_icon(download_num)
-            else:
-                to_text('There is an issue with the chromedriver')
-    to_text('Reports downloaded')
+    for facname in facilities:
+        if facname in facilitylist:
+            to_text("Downloading income statement: " + facname)
+            PCC.buildingSelect(facname)  # get next building in the list on chrome
+            time.sleep(1)
+            PCC.IS_M2M(str(report_year), facname)  # run reports
     PCC.teardown_method()
-    del PCC
+    to_text("Income statements downloaded")
+
+
+# run the reports
+def download_reports(facilitylist=facilityindex, reportlist=reports_list):
+    global check_status
+    global PCC
+    if not facilitylist:
+        facilitylist = facilityindex
+    if reportlist:
+        check_status = True
+        try:
+            PCC  # check if an instance already exists
+        except NameError:  # if not
+            startPCC()  # create one
+        for facname in facilities:                  # loop thorugh buildings
+            if facname in facilitylist:             # is this building checked
+                pcc_building = facilities[facname][2]  # pcc full name
+                bu = facilities[facname][1]
+                to_text(facname)                    # tell user they are switching
+                PCC.buildingSelect(pcc_building)    # select building in PCC
+                time.sleep(1)
+                for report in reportlist:           # get reports for this building
+                    if check_status:
+                        if not PCC.checkSelectedBuilding(pcc_building):
+                            PCC.buildingSelect(pcc_building)
+                        if report == 'AP Aging':
+                            to_text('AP Aging')
+                            PCC.ap_aging(facname)
+                        if report == 'AR Aging': # uses management console
+                            to_text('AR Aging')
+                            PCC.ar_aging(facname, bu)
+                        if report == 'AR Rollforward':
+                            to_text('AR Rollforward')
+                            PCC.ar_rollforward(facname)
+                        if report == 'Cash Reciepts Journal':
+                            to_text('Cash Recipts Journal')
+                            PCC.cash_receipts(facname)
+                        if report == 'Detailed Census':
+                            to_text('Detailed Census')
+                            PCC.census(facname)
+                        if report == 'Journal Entries':
+                            to_text('Journal Entries')
+                            PCC.journal_entries(facname)
+                        if report == 'Revenue Reconciliation':
+                            to_text('Revenue Reconciliation')
+                            PCC.revenuerec(facname)
+                    else:
+                        to_text('There is an issue with the chromedriver')
+        to_text('Reports downloaded')
+        PCC.teardown_method()
+        del PCC
+    else:
+        to_text('No reports selected.')
 
 
 class LoginPCC:
@@ -398,9 +445,10 @@ class LoginPCC:
             self.close_all_windows(window_before)
             renameDownloadedFile(
                 str(prev_month_num) + " " + str(report_year) + " " + facname + ' Income Statement M-to-M',
-                userpath + "\\Desktop\\")  # rename and move file
+                userpath + "\\Desktop\\AutoFillFinancials\\")  # rename and move file
         except:
             to_text('There was an issue downloading')
+            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'IS M2M', str(prev_month_num) + " " + str(report_year))
 
     def ap_aging(self, facname):  # download AP aging report. Paste to Excel (FULLY WORKING)
         try:
@@ -463,6 +511,8 @@ class LoginPCC:
                 time.sleep(2)
         except:
             to_text('Issue downloading AP Aging: ' + facname)
+            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'AP AGING',
+                         str(prev_month_num) + " " + str(report_year))
 
     def ar_aging(self,facname, bu):  # pull ar aging files - (FULLY WORKING) Saves as Excel file
         try:
@@ -481,7 +531,7 @@ class LoginPCC:
                 self.driver.get("https://www12.pointclickcare.com/emc/reporting.jsp?EMCmodule=P")  # go to reports
                 self.driver.find_element(By.LINK_TEXT, "AR Aging").click()                      # go to ar aging report
             self.driver.find_element(By.LINK_TEXT, "select").click()                            # click facilities
-            window_after = self.driver.window_handles[1]                                        # set second window
+            window_after = self.driver.window_handles[1]                                        # set second tab
             self.driver.switch_to.window(window_after)                                          # select the second tab
             self.driver.find_element(By.CSS_SELECTOR, "#footer > input:nth-child(2)").click()   # clear all
             self.driver.find_element(By.ID, "ESOLfacid_" + str(bu)).click()                     # select building
@@ -510,6 +560,8 @@ class LoginPCC:
                 to_text('Issue converting excel file')
         except:
             to_text('Issue downloading AR Aging: ' + facname)
+            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'AR AGING',
+                         str(prev_month_num) + " " + str(report_year))
 
     def ar_rollforward(self, facname):  # download ar rollforward report.(FULLY WORKING) Paste to Excel
         try:
@@ -566,6 +618,8 @@ class LoginPCC:
                 time.sleep(2)
         except:
             to_text('Issue downloading AR Rollforward: ' + facname)
+            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'AR ROLLFORWARD',
+                         str(prev_month_num) + " " + str(report_year))
 
     def cash_receipts(self, facname):  # prints to PDF -WORKED PERFECTLY
         try:
@@ -592,6 +646,8 @@ class LoginPCC:
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Cash Receipts\\')
         except:
             to_text('Issue downloading Cash Receipts: ' + facname)
+            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'CASH RECEIPTS',
+                         str(prev_month_num) + " " + str(report_year))
 
     def census(self, facname):  # prints to PDF -WORKED PERFECTLY
         try:
@@ -620,6 +676,8 @@ class LoginPCC:
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Census\\')
         except:
             to_text('Issue downloading Census: ' + facname)
+            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'CENSUS',
+                         str(prev_month_num) + " " + str(report_year))
 
     def journal_entries(self, facname):  # prints to PDF
         try:
@@ -643,6 +701,8 @@ class LoginPCC:
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Journal Entries\\')
         except:
             to_text('Issue downloading Journal Entries: ' + facname)
+            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'JOURNAL ENTRIES',
+                         str(prev_month_num) + " " + str(report_year))
 
     def revenuerec(self, facname):  # prints to PDF
         try:
@@ -669,6 +729,8 @@ class LoginPCC:
                 'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Revenue Reconciliation\\')
         except:
             to_text('Issue downloading Revenue Reconciliation: ' + facname)
+            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'REVENUE RECON',
+                         str(prev_month_num) + " " + str(report_year))
 
     def close_ap_periods(self):  # might have issues at end of the year
         try:
@@ -751,83 +813,288 @@ class LoginPCC:
             to_text('There was an issue downloading')
 
 
-def update_icon(number=0):
-    # create image
-    image = 'pil_icon.ico'
-    img = Image.new('RGBA', (50, 50), color=(255, 255, 255, 90))  # color background =  white  with transparency
-    d = ImageDraw.Draw(img)
-    d.rectangle([(0, 40), (50, 50)], fill=(39, 112, 229), outline=None)  # color = blue
-    # add text to the image
-    font_type = ImageFont.truetype("arial.ttf", 30)
-    a = number
-    # b = n * 20
-    d.text((0, 0), f"{a}", fill=(255, 255, 0), font=font_type)
-    img.save(image)
-    systray.update(icon=image)
-
-
-def tray_download_reports(systray):
-    download_reports()
-
-
-facilities = facility_df.index.to_list()
-accountants = facility_df['Accountant'].to_list()
-fac_number = facility_df['Business Unit'].to_list()
-pcc_name = facility_df['PCC Name'].to_list()
-facilities = dict(zip(facilities, zip(accountants, fac_number, pcc_name)))
-accountantlist = facility_df['Accountant'].drop_duplicates().to_list()  # make list of all accountants
-
-reports_list = ['AP Aging',
-                'AR Aging',
-                'AR Rollforward',
-                'Cash Reciepts Journal',
-                'Detailed Census',
-                'Journal Entries',
-                'Revenue Reconciliation']
-
-
-# run get_time function every 59 seconds
 monthendtimer = multitimer.MultiTimer(interval=50, function=get_time)
 monthendtimer.start()
 
-# kindredtimer = multitimer.MultiTimer(interval=(60*60), function=get_time)
+# GUI SECTION *************************************************************************************************
 
 
-# user interface class using tkinter
-class MyFirstGUI:
-    def __init__(self, master):
-        self.master = master
-        master.title("A simple GUI")
+class MainWindow(QMainWindow):
+    """
+         Сheckbox and system tray icons.
+         Will initialize in the constructor.
+    """
+    check_box = None
+    tray_icon = None
 
-        self.label = Label(master, text="This is our first GUI!")
-        self.label.pack()
+    # Override the class constructor
+    def __init__(self):
+        # Be sure to call the super class method
+        QMainWindow.__init__(self)
 
-        self.greet_button = Button(master, text="Greet", command=self.greet)
-        self.greet_button.pack()
+        self.setMinimumSize(QSize(380, 100))  # Set sizes
+        self.setWindowTitle("PCC Reporting Program")  # Set a title
+        central_widget = QWidget(self)  # Create a central widget
+        self.setCentralWidget(central_widget)  # Set the central widget
 
-        self.close_button = Button(master, text="Close", command=master.withdraw)
-        self.close_button.pack()
+        grid_layout = QGridLayout(self)  # Create a QGridLayout
+        central_widget.setLayout(grid_layout)  # Set the layout into the central widget
+        grid_layout.addWidget(QLabel("Welcome", self), 0, 0)
 
-    def greet(self):
-        print("Greetings!")
+        self.report_button = QPushButton('Month End Reports', self)
+        grid_layout.addWidget(self.report_button, 1, 0)
+        self.report_button.clicked.connect(self.open_reports)
+
+        self.incomestmt_button = QPushButton('Income Statements', self)
+        grid_layout.addWidget(self.incomestmt_button, 2, 0)
+        self.incomestmt_button.clicked.connect(self.open_incomestmt)
+
+        self.kindred_button = QPushButton('Kindred Report', self)
+        grid_layout.addWidget(self.kindred_button, 3, 0)
+        self.kindred_button.clicked.connect(downloadKindredReport)
+
+        # Init QSystemTrayIcon
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(self.style().standardIcon(QStyle.SP_ComputerIcon))
+
+        '''
+            Define and add steps to work with the system tray icon
+            show - show window
+            hide - hide window
+            exit - exit from application
+        '''
+        show_action = QAction("Open Window", self)
+        hide_action = QAction("Hide to Tray", self)
+        runall_action = QAction("Run All", self)
+        quit_action = QAction("Exit Program", self)
+        show_action.triggered.connect(self.show)
+        hide_action.triggered.connect(self.hide)
+        runall_action.triggered.connect(download_reports)
+        quit_action.triggered.connect(self.kill_program)
+        tray_menu = QMenu()
+        tray_menu.addAction(show_action)
+        tray_menu.addAction(hide_action)
+        tray_menu.addAction(runall_action)
+        tray_menu.addAction(quit_action)
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.show()
+
+    # Override closeEvent, to intercept the window closing event
+    # The window will be closed only if there is no check mark in the check box
+    def closeEvent(self, event):
+        event.ignore()
+        self.hide()
+        self.tray_icon.showMessage(
+            "Tray Program",
+            "Application was minimized to Tray",
+            QSystemTrayIcon.Information,
+            2000
+        )
+
+    def open_reports(self):
+        self.child_win = RunReportsWin()
+        self.child_win.show()
+
+    def open_incomestmt(self):
+        self.child_win2 = RunIncomeStmtWin()
+        self.child_win2.show()
+
+    def kill_program(self):
+        monthendtimer.stop()
+        exit()
 
 
-def open_gui(systray):
-    root = Tk()
-    my_gui = MyFirstGUI(root)
-    root.mainloop()
+class RunReportsWin(QWidget):
+    def __init__(self):
+        super(RunReportsWin, self).__init__()
+        self.title = 'Select your buildings'
+        self.left = 1200
+        self.top = 200
+        # self.width = 520
+        # self.height = 400
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+
+        mainframe = QVBoxLayout()                   # create a layout for the window
+        self.setLayout(mainframe)                   # add the layout to the window
+
+        self.cbframe = QFrame(self)                      # frame that holds the check boxes
+        self.cbframe.setFrameShape(QFrame.StyledPanel)   # add some style to the frame
+        self.cbframe.setLineWidth(0.6)
+        self.layout = QGridLayout(self.cbframe)          # create and add a layout for the frame
+        mainframe.addWidget(self.cbframe)                # add the layout to the frame
+
+        x, y = 1, 1                                     # add checkboxes to the layout of cbframe
+        for item in facilities:                         #
+            cb = QCheckBox(str(item))                   #
+            cb.setChecked(False)                        # set all checkboxes to unchecked
+            self.layout.addWidget(cb, y, x)             #
+            y += 1                                      #
+            if y >= 10:                                 #
+                x += 1                                  #
+                y = 1                                   #
+
+        self.rptframe = QFrame(self)                         # create frame to select reports
+        self.rptlayout = QGridLayout(self.rptframe)          # create and add grid layout to the frame
+        mainframe.addWidget(self.rptframe)                   # add frame to mainframe
+
+        x, y = 1, 1
+        for report in reports_list:                 # create reports checkboxes
+            cb = QCheckBox(report)                  #
+            cb.setChecked(False)                    #
+            self.rptlayout.addWidget(cb, y,x)       #
+            y += 1                                  #
+            if y >= 3:                              #
+                x += 1                              #
+                y = 1                               #
+
+        dateframe = QFrame(self)
+        self.datelayout = QFormLayout(dateframe)
+        mainframe.addWidget(dateframe)
+
+        monthtextbox = QLineEdit(self)
+        monthtextbox.setText(prev_month_num_str)
+        monthtextbox.setFixedSize(100,20)
+        self.datelayout.addRow('Month:', monthtextbox)
+        yeartextbox = QLineEdit(self)
+        yeartextbox.setText(str(report_year))
+        yeartextbox.setFixedSize(100,20)
+        self.datelayout.addRow('Year:', yeartextbox)
+
+        btnframe = QFrame(self)                     # create a new frame for save and run, check all, uncheck all
+        btnlayout = QGridLayout(btnframe)           # create and add a layout for the frame
+        mainframe.addWidget(btnframe)               # add the frame to the main frame
+
+        saverunbtn = QPushButton('Save and Run', self)
+        btnlayout.addWidget(saverunbtn, 1,1)
+        saverunbtn.clicked.connect(self.checkCheckboxes)
+        selectallbtn = QPushButton('Check All', self)
+        btnlayout.addWidget(selectallbtn, 1, 2)
+        selectallbtn.clicked.connect(self.selectCheckboxes)
+        unselectallbtn = QPushButton('Uncheck All', self)
+        btnlayout.addWidget(unselectallbtn, 1, 3)
+        unselectallbtn.clicked.connect(self.unselectCheckboxes)
+
+    def checkCheckboxes(self):
+        fac_checked_list = []
+        rpt_checked_list = []
+
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            if chbox.isChecked():
+                fac_checked_list.append(chbox.text())
+
+        for i in range(self.rptlayout.count()):
+            chbox = self.rptlayout.itemAt(i).widget()
+            if chbox.isChecked():
+                rpt_checked_list.append(chbox.text())
+
+        month = self.datelayout.itemAt(1).widget()
+        year = self.datelayout.itemAt(3).widget()
+        update_date(month.text(), year.text())
+        self.close()
+        download_reports(fac_checked_list, rpt_checked_list)
+
+    def selectCheckboxes(self):
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            chbox.setChecked(True)
+
+    def unselectCheckboxes(self):
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            chbox.setChecked(False)
 
 
-# create image
-image = 'pil_icon.ico'
-img = Image.new('RGBA', (50, 50), color=(255, 255, 255, 90))  # color background =  white  with transparency
-d = ImageDraw.Draw(img)
-d.rectangle([(0, 40), (50, 50)], fill=(39, 112, 229), outline=None)  # color = blue
-# add text to the image
-font_type = ImageFont.truetype("arial.ttf", 30)
-d.text((0, 0), f"{0}", fill=(255, 255, 0), font=font_type)
-img.save(image)
+class RunIncomeStmtWin(QWidget):
+    def __init__(self):
+        super(RunIncomeStmtWin, self).__init__()
+        self.title = 'Select your buildings'
+        self.left = 1200
+        self.top = 200
+        # self.width = 520
+        # self.height = 400
+        self.initUI()
 
-menu_options = (("Run reports (auto on 15th @8pm)", None, tray_download_reports),("Open UI", None, open_gui),)
-systray = SysTrayIcon(image, "PACS Reporting", menu_options)
-systray.start()
+    def initUI(self):
+        self.setWindowTitle(self.title)
+
+        mainframe = QVBoxLayout()                   # create a layout for the window
+        self.setLayout(mainframe)                   # add the layout to the window
+
+        self.cbframe = QFrame(self)                      # frame that holds the check boxes
+        self.cbframe.setFrameShape(QFrame.StyledPanel)   # add some style to the frame
+        self.cbframe.setLineWidth(0.6)
+        self.layout = QGridLayout(self.cbframe)          # create and add a layout for the frame
+        mainframe.addWidget(self.cbframe)                # add the layout to the frame
+
+        x, y = 1, 1                                     # add checkboxes to the layout of cbframe
+        for item in facilities:                         #
+            cb = QCheckBox(str(item))                   #
+            cb.setChecked(False)                        # set all checkboxes to unchecked
+            self.layout.addWidget(cb, y, x)             #
+            y += 1                                      #
+            if y >= 10:                                 #
+                x += 1                                  #
+                y = 1                                   #
+
+        dateframe = QFrame(self)
+        self.datelayout = QFormLayout(dateframe)
+        mainframe.addWidget(dateframe)
+
+        monthtextbox = QLineEdit(self)
+        monthtextbox.setText(prev_month_num_str)
+        monthtextbox.setFixedSize(100,20)
+        self.datelayout.addRow('Month:', monthtextbox)
+        yeartextbox = QLineEdit(self)
+        yeartextbox.setText(str(report_year))
+        yeartextbox.setFixedSize(100,20)
+        self.datelayout.addRow('Year:', yeartextbox)
+
+        btnframe = QFrame(self)                     # create a new frame for save and run, check all, uncheck all
+        btnlayout = QGridLayout(btnframe)           # create and add a layout for the frame
+        mainframe.addWidget(btnframe)               # add the frame to the main frame
+
+        saverunbtn = QPushButton('Save and Run', self)
+        btnlayout.addWidget(saverunbtn, 1,1)
+        saverunbtn.clicked.connect(self.checkCheckboxes)
+        selectallbtn = QPushButton('Check All', self)
+        btnlayout.addWidget(selectallbtn, 1, 2)
+        selectallbtn.clicked.connect(self.selectCheckboxes)
+        unselectallbtn = QPushButton('Uncheck All', self)
+        btnlayout.addWidget(unselectallbtn, 1, 3)
+        unselectallbtn.clicked.connect(self.unselectCheckboxes)
+
+    def checkCheckboxes(self):
+        fac_checked_list = []
+        rpt_checked_list = []
+
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            if chbox.isChecked():
+                fac_checked_list.append(chbox.text())
+
+        month = self.datelayout.itemAt(1).widget()
+        year = self.datelayout.itemAt(3).widget()
+        update_date(month.text(), year.text())
+        self.close()
+        downloadIncomeStmtM2M(fac_checked_list)
+
+    def selectCheckboxes(self):
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            chbox.setChecked(True)
+
+    def unselectCheckboxes(self):
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            chbox.setChecked(False)
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    mw = MainWindow()
+    # mw.show()
+    sys.exit(app.exec())
