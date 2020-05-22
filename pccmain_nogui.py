@@ -179,8 +179,6 @@ def convert_to_xlsx():
     listoffiles = glob.glob(userpath + '\\Downloads\\*')  # get a list of files
     latestfile = max(listoffiles, key=os.path.getctime)  # find the latest file
     extention = os.path.splitext(latestfile)[1]  # get the extension of the latest file
-    # excel = win32com.client.gencache.EnsureDispatch('Excel.Application')
-    # excel = win32com.client.DispatchEx("Excel.Application")
     excel = win32com.client.dynamic.Dispatch("Excel.Application")
     wb = excel.Workbooks.Open(latestfile)
     wb.SaveAs(latestfile + "x", FileFormat=51)
@@ -381,10 +379,7 @@ class LoginPCC:
             check_status = False
 
     def teardown_method(self):  # exit the program (FULLY WORKING)
-        try:
-            self.driver.quit()
-        except:
-            pass
+        self.driver.quit()
 
     def close_all_windows(self, firstwindow):
         original_window = firstwindow
@@ -402,9 +397,7 @@ class LoginPCC:
         try:
             self.driver.find_element(By.PARTIAL_LINK_TEXT, building).click() # select the building
             time.sleep(2)                                                    # wait
-            if building in self.driver.find_element(By.ID, "pccFacLink").get_attribute("title"):
-                pass
-            else:
+            if building not in self.driver.find_element(By.ID, "pccFacLink").get_attribute("title"):
                 to_text('Could not find ' + building)
         except:
             to_text('Could not get the proper page')
@@ -483,30 +476,25 @@ class LoginPCC:
             pyautogui.hotkey('ctrl', 'v')  # paste
             time.sleep(2)  # wait to load
             try:
-                wb.save(newpathtext + str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
+                wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AP Aging\\" +
+                        str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                 wb.close()
-                to_text(facname + ' AP aging saved')
+                to_text(facname + ' AP aging saved to shared drive')
             except:
                 try:
-                    wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AP Aging\\" +
+                    os.mkdir(userpath + '\\Desktop\\temp reporting\\')
+                    wb.save(userpath + '\\Desktop\\temp reporting\\' +
                             str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                     wb.close()
-                    to_text(facname + ' AP aging saved')
+                    to_text(facname + ' AP aging saved to desktop')
                 except:
                     try:
-                        os.mkdir(userpath + '\\Desktop\\temp reporting\\')
                         wb.save(userpath + '\\Desktop\\temp reporting\\' +
                                 str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                         wb.close()
-                        to_text(facname + ' AP aging saved')
+                        to_text(facname + ' AP aging saved to desktop 2')
                     except:
-                        try:
-                            wb.save(userpath + '\\Desktop\\temp reporting\\' +
-                                    str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
-                            wb.close()
-                            to_text(facname + ' AP aging saved')
-                        except:
-                            to_text('Error saving AP aging')
+                        to_text('Error saving AP aging')
                 time.sleep(2)
         except:
             to_text('Issue downloading AP Aging: ' + facname)
@@ -586,30 +574,25 @@ class LoginPCC:
             pyautogui.hotkey('ctrl', 'v')  # paste
             time.sleep(2)  # wait to load
             try:
-                wb.save(newpathtext + str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
+                wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AR Rollforward\\" +
+                        str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
                 wb.close()
-                to_text(facname + ' AR Rollforward saved')
+                to_text(facname + ' AR Rollforward saved to shared drive')
             except:
                 try:
-                    wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AR Rollforward\\" +
+                    os.mkdir(userpath + '\\Desktop\\temp reporting\\')
+                    wb.save(userpath + '\\Desktop\\temp reporting\\' +
                             str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
                     wb.close()
-                    to_text(facname + ' AR Rollforward saved')
+                    to_text(facname + ' AR Rollforward saved to desktop')
                 except:
                     try:
-                        os.mkdir(userpath + '\\Desktop\\temp reporting\\')
                         wb.save(userpath + '\\Desktop\\temp reporting\\' +
                                 str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
                         wb.close()
-                        to_text(facname + ' AR Rollforward saved')
+                        to_text(facname + ' AR Rollforward saved to desktop 2')
                     except:
-                        try:
-                            wb.save(userpath + '\\Desktop\\temp reporting\\' +
-                                    str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
-                            wb.close()
-                            to_text(facname + ' AR Rollforward saved')
-                        except:
-                            to_text('Error saving AR Rollforward')
+                        to_text('Error saving AR Rollforward')
                 time.sleep(2)
         except:
             to_text('Issue downloading AR Rollforward: ' + facname)
