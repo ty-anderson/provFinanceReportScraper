@@ -95,6 +95,13 @@ def get_time():
     print('Checked the time')
 
 
+def to_text(message):
+    s = str(datetime.datetime.now().strftime("%H:%M:%S")) + ">>  " + str(message) + "\n"
+    with open(userpath + '\\Desktop\\PyReport.csv','a') as file:
+        file.write(s)
+        file.close()
+
+
 def update_date(monthinput='', yearinput=''):
     global prev_month_num_str
     global prev_month_word
@@ -117,13 +124,6 @@ def update_date(monthinput='', yearinput=''):
     except ValueError:
         report_year = report_year
     to_text('Reporting date is ' + prev_month_abbr + ' ' + str(report_year))
-
-
-def to_text(message):
-    s = str(datetime.datetime.now().strftime("%H:%M:%S")) + ">>  " + str(message) + "\n"
-    with open(userpath + '\\Desktop\\PyReport.csv','a') as file:
-        file.write(s)
-        file.close()
 
 
 # pull user's name
@@ -202,7 +202,7 @@ def find_updated_driver():
             to_text('Updating chromedriver to newer version')
             shutil.copyfile(folder + 'chromedriver ' + max(file_list) + '.exe',
                             os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + max(file_list) + '.exe')
-            to_text('chromedriver updated to version '+ max(file_list))
+            to_text('chromedriver updated to version ' + max(file_list))
         except:
             to_text("Couldn't update chromedriver automatically")
         return max(file_list)
@@ -448,7 +448,6 @@ class LoginPCC:
                 userpath + "\\Desktop\\AutoFillFinancials\\")  # rename and move file
         except:
             to_text('There was an issue downloading')
-            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'IS M2M', str(prev_month_num) + " " + str(report_year))
 
     def ap_aging(self, facname):  # download AP aging report. Paste to Excel (FULLY WORKING)
         try:
@@ -511,8 +510,6 @@ class LoginPCC:
                 time.sleep(2)
         except:
             to_text('Issue downloading AP Aging: ' + facname)
-            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'AP AGING',
-                         str(prev_month_num) + " " + str(report_year))
 
     def ar_aging(self,facname, bu):  # pull ar aging files - (FULLY WORKING) Saves as Excel file
         try:
@@ -560,8 +557,6 @@ class LoginPCC:
                 to_text('Issue converting excel file')
         except:
             to_text('Issue downloading AR Aging: ' + facname)
-            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'AR AGING',
-                         str(prev_month_num) + " " + str(report_year))
 
     def ar_rollforward(self, facname):  # download ar rollforward report.(FULLY WORKING) Paste to Excel
         try:
@@ -618,8 +613,6 @@ class LoginPCC:
                 time.sleep(2)
         except:
             to_text('Issue downloading AR Rollforward: ' + facname)
-            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'AR ROLLFORWARD',
-                         str(prev_month_num) + " " + str(report_year))
 
     def cash_receipts(self, facname):  # prints to PDF -WORKED PERFECTLY
         try:
@@ -646,8 +639,6 @@ class LoginPCC:
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Cash Receipts\\')
         except:
             to_text('Issue downloading Cash Receipts: ' + facname)
-            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'CASH RECEIPTS',
-                         str(prev_month_num) + " " + str(report_year))
 
     def census(self, facname):  # prints to PDF -WORKED PERFECTLY
         try:
@@ -676,8 +667,6 @@ class LoginPCC:
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Census\\')
         except:
             to_text('Issue downloading Census: ' + facname)
-            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'CENSUS',
-                         str(prev_month_num) + " " + str(report_year))
 
     def journal_entries(self, facname):  # prints to PDF
         try:
@@ -701,8 +690,6 @@ class LoginPCC:
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Journal Entries\\')
         except:
             to_text('Issue downloading Journal Entries: ' + facname)
-            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'JOURNAL ENTRIES',
-                         str(prev_month_num) + " " + str(report_year))
 
     def revenuerec(self, facname):  # prints to PDF
         try:
@@ -729,8 +716,6 @@ class LoginPCC:
                 'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Revenue Reconciliation\\')
         except:
             to_text('Issue downloading Revenue Reconciliation: ' + facname)
-            to_text(userpath + '\\Desktop\\Reports log.csv', str(datetime.date.today()), facname, 'REVENUE RECON',
-                         str(prev_month_num) + " " + str(report_year))
 
     def close_ap_periods(self):  # might have issues at end of the year
         try:
@@ -820,16 +805,10 @@ monthendtimer.start()
 
 
 class MainWindow(QMainWindow):
-    """
-         Сheckbox and system tray icons.
-         Will initialize in the constructor.
-    """
     check_box = None
     tray_icon = None
 
-    # Override the class constructor
     def __init__(self):
-        # Be sure to call the super class method
         QMainWindow.__init__(self)
 
         self.setMinimumSize(QSize(380, 100))  # Set sizes
