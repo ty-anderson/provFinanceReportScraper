@@ -471,6 +471,7 @@ class LoginPCC:
             time.sleep(2)
             self.close_all_windows(window_before)
             wb = xw.Book()  # new workbook
+            app = xw.apps.active
             time.sleep(2)
             wb.activate(steal_focus=True)  # focus the new instance
             pyautogui.hotkey('ctrl', 'v')  # paste
@@ -478,23 +479,20 @@ class LoginPCC:
             try:
                 wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AP Aging\\" +
                         str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
-                wb.close()
+                app.quit()
                 to_text(facname + ' AP aging saved to shared drive')
             except:
                 try:
                     os.mkdir(userpath + '\\Desktop\\temp reporting\\')
+                except:
+                    pass
+                try:
                     wb.save(userpath + '\\Desktop\\temp reporting\\' +
                             str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
-                    wb.close()
-                    to_text(facname + ' AP aging saved to desktop')
+                    app.quit()
+                    to_text(facname + ' AP aging saved to desktop 2')
                 except:
-                    try:
-                        wb.save(userpath + '\\Desktop\\temp reporting\\' +
-                                str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
-                        wb.close()
-                        to_text(facname + ' AP aging saved to desktop 2')
-                    except:
-                        to_text('Error saving AP aging')
+                    to_text('Error saving AP aging to desktop')
                 time.sleep(2)
         except:
             to_text('Issue downloading AP Aging: ' + facname)
@@ -569,6 +567,7 @@ class LoginPCC:
             time.sleep(5)
             self.close_all_windows(window_before)
             wb = xw.Book()  # new workbook
+            app = xw.apps.active
             time.sleep(2)
             wb.activate(steal_focus=True)  # focus the new instance
             pyautogui.hotkey('ctrl', 'v')  # paste
@@ -576,23 +575,20 @@ class LoginPCC:
             try:
                 wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AR Rollforward\\" +
                         str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
-                wb.close()
+                app.quit()
                 to_text(facname + ' AR Rollforward saved to shared drive')
             except:
                 try:
                     os.mkdir(userpath + '\\Desktop\\temp reporting\\')
+                except:
+                    pass
+                try:
                     wb.save(userpath + '\\Desktop\\temp reporting\\' +
                             str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
-                    wb.close()
-                    to_text(facname + ' AR Rollforward saved to desktop')
+                    app.quit()
+                    to_text(facname + ' AR Rollforward saved to desktop 2')
                 except:
-                    try:
-                        wb.save(userpath + '\\Desktop\\temp reporting\\' +
-                                str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
-                        wb.close()
-                        to_text(facname + ' AR Rollforward saved to desktop 2')
-                    except:
-                        to_text('Error saving AR Rollforward')
+                    to_text('Error saving AR Rollforward to desktop')
                 time.sleep(2)
         except:
             to_text('Issue downloading AR Rollforward: ' + facname)
