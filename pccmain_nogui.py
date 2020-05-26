@@ -276,6 +276,7 @@ def downloadIncomeStmtM2M(facilitylist):
 def download_reports(facilitylist=facilityindex, reportlist=reports_list):
     global check_status
     global PCC
+    counter = 0
     if not facilitylist:
         facilitylist = facilityindex
     if reportlist:
@@ -284,38 +285,52 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
             PCC  # check if an instance already exists
         except NameError:  # if not
             startPCC()  # create one
-        for facname in facilities:                  # loop thorugh buildings
-            if facname in facilitylist:             # is this building checked
-                pcc_building = facilities[facname][2]  # pcc full name
+        for facname in facilities:                      # loop thrugh buildings
+            if facname in facilitylist:                 # is this building checked
+                pcc_building = facilities[facname][2]   # pcc full name
                 bu = facilities[facname][1]
-                to_text(facname)                    # tell user they are switching
+                to_text(facname)
                 PCC.buildingSelect(pcc_building)    # select building in PCC
                 time.sleep(1)
-                for report in reportlist:           # get reports for this building
+                for report in reportlist:
                     if check_status:
-                        if not PCC.checkSelectedBuilding(pcc_building):
-                            PCC.buildingSelect(pcc_building)
+                        if counter >= 60:           # close and create new instance after certain # of reports pulled so chrome doesn't stall
+                            to_text('starting new chrome instance')
+                            PCC.teardown_method()   # close window
+                            del PCC                 # delete instance
+                            startPCC()              # start new instance
+                            counter = 0             # reset counter
+                            time.sleep(6)           # wait for site to load
+                        if not PCC.checkSelectedBuilding(pcc_building):     # verify correct building selected in PCC
+                            PCC.buildingSelect(pcc_building)                # if not then select correct building
                         if report == 'AP Aging':
                             to_text('AP Aging')
                             PCC.ap_aging(facname)
+                            counter += 1
                         if report == 'AR Aging': # uses management console
                             to_text('AR Aging')
                             PCC.ar_aging(facname, bu)
+                            counter += 1
                         if report == 'AR Rollforward':
                             to_text('AR Rollforward')
                             PCC.ar_rollforward(facname)
+                            counter += 1
                         if report == 'Cash Reciepts Journal':
                             to_text('Cash Recipts Journal')
                             PCC.cash_receipts(facname)
+                            counter += 1
                         if report == 'Detailed Census':
                             to_text('Detailed Census')
                             PCC.census(facname)
+                            counter += 1
                         if report == 'Journal Entries':
                             to_text('Journal Entries')
                             PCC.journal_entries(facname)
+                            counter += 1
                         if report == 'Revenue Reconciliation':
                             to_text('Revenue Reconciliation')
                             PCC.revenuerec(facname)
+                            counter += 1
                     else:
                         to_text('There is an issue with the chromedriver')
         to_text('Reports downloaded')
