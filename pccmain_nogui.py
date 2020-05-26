@@ -136,8 +136,14 @@ def getName(user=username):
     return name
 
 
+def deleteDownloads():
+    filelist = glob.glob(userpath + '\\Downloads\\*')
+    for f in filelist:
+        os.remove(f)
+
+
 # rename and move files
-def renameDownloadedFile(newfilename, dirpath):  # renames file most recent file in downloads folder and moves it to dirpath
+def renameDownloadedFile(newfilename, dirpath=''):  # renames file most recent file in downloads folder and moves it to dirpath
     global newpathtext
     try:
         newptext = newpathtext
@@ -148,22 +154,25 @@ def renameDownloadedFile(newfilename, dirpath):  # renames file most recent file
         listoffiles = glob.glob(userpath + '\\Downloads\\*')    # get a list of filesp
         latestfile = max(listoffiles, key=os.path.getctime)     # find the latest file
         extention = os.path.splitext(latestfile)[1]             # get the extension of the latest file
-        if newptext != '\\':
-            destfile = os.path.join(newptext, newfilename + extention)
+        if dirpath == '':
+            os.rename(latestfile,userpath + '\\Downloads\\' + newfilename)
         else:
-            destfile = os.path.join(dirpath, newfilename + extention)
-        try:
-            shutil.move(latestfile, destfile)   # try to save file to original folder (if error with VPN)
-        except:                                                             # BACKUP LOCATION IF VPN GOES DOWN
-            try:                                                            # make new folder if doesn't exist
-                os.mkdir(userpath + '\\Desktop\\temp reporting\\')          # temp file on desktop
-                newptext = userpath + '\\Desktop\\temp reporting\\'         # temp file on desktop
-                destfile = os.path.join(newptext, newfilename + extention)  # form save file path
-            except FileExistsError:                                         # if folder does exist then just save
-                newptext = userpath + '\\Desktop\\temp reporting\\'
+            if newptext != '\\':
                 destfile = os.path.join(newptext, newfilename + extention)
-            shutil.move(latestfile, destfile)                               # MOVE AND RENAME
-        to_text('Moved to: ' + destfile)                                   # END BACKUP LOCATION
+            else:
+                destfile = os.path.join(dirpath, newfilename + extention)
+            try:
+                shutil.move(latestfile, destfile)   # try to save file to original folder (if error with VPN)
+            except:                                                             # BACKUP LOCATION IF VPN GOES DOWN
+                try:                                                            # make new folder if doesn't exist
+                    os.mkdir(userpath + '\\Desktop\\temp reporting\\')          # temp file on desktop
+                    newptext = userpath + '\\Desktop\\temp reporting\\'         # temp file on desktop
+                    destfile = os.path.join(newptext, newfilename + extention)  # form save file path
+                except FileExistsError:                                         # if folder does exist then just save
+                    newptext = userpath + '\\Desktop\\temp reporting\\'
+                    destfile = os.path.join(newptext, newfilename + extention)
+                shutil.move(latestfile, destfile)                               # MOVE AND RENAME
+            to_text('Moved to: ' + destfile)                                   # END BACKUP LOCATION
     except:
         to_text("Issue renaming/moving to " + str(dirpath))
         to_text(newfilename + extention + " is in Downloads folder")
@@ -272,10 +281,23 @@ def downloadIncomeStmtM2M(facilitylist):
     to_text("Income statements downloaded")
 
 
+def downloadIntercoReports():
+    deleteDownloads()
+    try:
+        PCC  # check if an instance already exists
+    except NameError:  # if not
+        startPCC()  # create one
+    to_text('Downloading intercompany reports')
+    PCC.intercompany_reports()
+    PCC.teardown_method()
+    to_text('Complete')
+
+
 # run the reports
 def download_reports(facilitylist=facilityindex, reportlist=reports_list):
     global check_status
     global PCC
+    deleteDownloads()
     counter = 0
     if not facilitylist:
         facilitylist = facilityindex
@@ -791,6 +813,70 @@ class LoginPCC:
         except:
             to_text('There was an issue downloading')
 
+    def intercompany_reports(self):
+        window_before = self.driver.window_handles[0]  # make window tab object
+        time.sleep(1)
+        title = self.driver.find_element(By.ID, "pccFacLink")
+        time.sleep(1)
+        if title.text != "Enterprise Management Console":
+            self.driver.get("https://www12.pointclickcare.com/emc/home.jsp")
+            self.driver.find_element(By.ID, "pccFacLink").click()
+            time.sleep(1)
+            self.driver.find_element(By.CSS_SELECTOR, "#facTabs .pccButton").click()  # go to management console
+            time.sleep(1)
+        self.driver.get("https://www12.pointclickcare.com/glap/reports/rp_gltransactions.xhtml")  # GLAP Reports
+        time.sleep(4)
+        dropdown = Select(self.driver.find_element(By.NAME, "ESOLperstart"))               # month selector
+        dropdown.select_by_value(str(prev_month_num))
+        dropdown = Select(self.driver.find_element(By.NAME, "ESOLyrstart"))
+        dropdown.select_by_value(str(report_year))
+        dropdown = Select(self.driver.find_element(By.NAME, "ESOLperend"))
+        dropdown.select_by_value(str(prev_month_num))
+        dropdown = Select(self.driver.find_element(By.NAME, "ESOLyrend"))
+        dropdown.select_by_value(str(report_year))
+        time.sleep(1)
+        self.driver.find_element(By.CSS_SELECTOR, "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > input[type=radio]:nth-child(10)").click()
+        self.driver.find_element(By.CSS_SELECTOR, "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > input[type=text]:nth-child(11)").send_keys("1340.000")
+        time.sleep(1)
+        self.driver.find_element(By.CSS_SELECTOR, "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > a > img").click()
+        dropdown = Select(self.driver.find_element(By.NAME, "ESOLreportOutputType"))
+        dropdown.select_by_value('csv')
+        self.driver.find_element(By.ID, "runButton").click()
+        window_after = self.driver.window_handles[1]
+        self.driver.switch_to.window(window_after)
+        while True:
+            try:
+                self.driver.find_element(By.CSS_SELECTOR, "#ajaxComplete > td > input").click()
+                self.driver.switch_to.window(window_before)
+                break
+            except:
+                time.sleep(5)
+        time.sleep(10)
+        self.close_all_windows(window_before)                                       # end of GL transactions
+        renameDownloadedFile("PCC Interco.csv")
+        # download balance sheet
+        self.driver.get("https://www12.pointclickcare.com/glap/reports/rp_customglreports.jsp?ESOLrepId=5")
+        self.driver.find_element(By.CSS_SELECTOR, "#dateRange > table > tbody > tr > td:nth-child(" + str(prev_month_num) + ") > input[type=checkbox]:nth-child(3)").click()
+        dropdown = Select(self.driver.find_element(By.NAME, "ESOLyear"))
+        dropdown.select_by_value(str(report_year))
+        self.driver.find_element(By.NAME, "ESOLcomparefacs").click()
+        self.driver.find_element(By.NAME, "ESOLdispAcctNo").click()
+        self.driver.find_element(By.NAME, "ESOLshowDecimals").click()
+        self.driver.find_element(By.NAME, "ESOLExportToSpreadsheet").click()
+        self.driver.find_element(By.ID, "runButton").click()
+        window_after = self.driver.window_handles[1]
+        self.driver.switch_to.window(window_after)
+        while True:
+            try:
+                self.driver.find_element(By.CSS_SELECTOR, "#ExportDiv > form > table > tbody > tr:nth-child(2) > td > input:nth-child(1)").click()
+                self.driver.switch_to.window(window_before)
+                break
+            except:
+                time.sleep(5)
+        time.sleep(10)
+        self.close_all_windows(window_before)
+
+
 
 monthendtimer = multitimer.MultiTimer(interval=50, function=get_time)
 monthendtimer.start()
@@ -825,6 +911,10 @@ class MainWindow(QMainWindow):
         self.kindred_button = QPushButton('Kindred Report', self)
         grid_layout.addWidget(self.kindred_button, 3, 0)
         self.kindred_button.clicked.connect(downloadKindredReport)
+
+        self.interco_button = QPushButton('Intercompany Reports', self)
+        grid_layout.addWidget(self.interco_button, 4, 0)
+        self.interco_button.clicked.connect(self.open_intercowin)
 
         # Init QSystemTrayIcon
         self.tray_icon = QSystemTrayIcon(self)
@@ -870,6 +960,10 @@ class MainWindow(QMainWindow):
 
     def open_incomestmt(self):
         self.child_win2 = RunIncomeStmtWin()
+        self.child_win2.show()
+
+    def open_intercowin(self):
+        self.child_win2 = RunIntercoWin()
         self.child_win2.show()
 
     def kill_program(self):
@@ -1066,8 +1160,52 @@ class RunIncomeStmtWin(QWidget):
             chbox.setChecked(False)
 
 
+class RunIntercoWin(QWidget):
+    def __init__(self):
+        super(RunIntercoWin, self).__init__()
+        self.title = 'Select date'
+        self.left = 1200
+        self.top = 200
+        # self.width = 520
+        # self.height = 400
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+
+        mainframe = QVBoxLayout()                   # create a layout for the window
+        self.setLayout(mainframe)                   # add the layout to the window
+
+        dateframe = QFrame(self)
+        self.datelayout = QFormLayout(dateframe)
+        mainframe.addWidget(dateframe)
+
+        monthtextbox = QLineEdit(self)
+        monthtextbox.setText(prev_month_num_str)
+        monthtextbox.setFixedSize(100,20)
+        self.datelayout.addRow('Month:', monthtextbox)
+        yeartextbox = QLineEdit(self)
+        yeartextbox.setText(str(report_year))
+        yeartextbox.setFixedSize(100,20)
+        self.datelayout.addRow('Year:', yeartextbox)
+
+        btnframe = QFrame(self)                     # create a new frame for save and run, check all, uncheck all
+        btnlayout = QGridLayout(btnframe)           # create and add a layout for the frame
+        mainframe.addWidget(btnframe)               # add the frame to the main frame
+
+        saverunbtn = QPushButton('Save and Run', self)
+        btnlayout.addWidget(saverunbtn, 1,1)
+        saverunbtn.clicked.connect(self.runInterco)
+
+    def runInterco(self):
+        month = self.datelayout.itemAt(1).widget()
+        year = self.datelayout.itemAt(3).widget()
+        update_date(month.text(), year.text())
+        self.close()
+        downloadIntercoReports()
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     mw = MainWindow()
-    # mw.show()
+    mw.show()
     sys.exit(app.exec())
