@@ -4,10 +4,11 @@ import datetime
 from collections import Counter
 
 """
-This will count how many reports have been run for each facility.
-If it is not the same as the number of month then it will create a report on the desktop to inform you.
+This will count how many reports have been run for each facility, informing you of ones that are missing.
+If it is not the same as the reporting month number (by May there should be 5 reports for each)
+then it will create a report on the desktop to inform you so you can run the missing months.
 """
-
+reportmonth = datetime.date.today().month - 1
 userpath = environ['USERPROFILE']
 
 
@@ -39,7 +40,7 @@ for path in mypath:
     c = Counter(check_list)
 
     for item in c:
-        if c[item] != 4:
+        if c[item] != reportmonth:
             to_text(item + " " + str(c[item]))
 
 to_text('Done')
