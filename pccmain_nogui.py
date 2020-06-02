@@ -20,6 +20,22 @@ from PyQt5.QtCore import QSize
 import sys
 import multitimer
 
+"""
+This app is a web scraper for pulling reports from PCC
+1. Month end reports for PACS close
+2. Income statements for PACS financial package to be converted to the 96-line income statement
+3. Census report of kindred buildings census
+4. Intercompany reports (balance sheet-system & GL transactions for 1340.000)
+
+To update when new buildings are acquired "P:\PACS\Finance\Automation\PCC Reporting\pcc webscraping.xlsx"
+
+The process currently checks every 59 seconds to see if today is the 15th at 8:00pm to run month end reports. This must
+be running at that time for it to work which means this needs to constantly run in the background.  Would be better on 
+a server with access to the shared drive (probably not going to happen so run manually, currently commented out).
+
+Files (Chromedriver and pccwebscraping) are hosted on shared drive but moved to local folder PCC HUB in users documents 
+folder to run.
+"""
 
 # clear the gen_py folder that is causing issues with the xlsx conversion with win32com
 try:
@@ -91,7 +107,8 @@ def get_time():
     if now_day == 15:
         if now_hour == 20:
             if now_min == 1:
-                download_reports()
+                pass
+                # download_reports()
     print('Checked the time')
 
 
