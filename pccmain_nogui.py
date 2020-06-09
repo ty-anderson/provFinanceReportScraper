@@ -114,7 +114,7 @@ def get_time():
 
 def to_text(message):
     s = str(datetime.datetime.now().strftime("%H:%M:%S")) + ">>  " + str(message) + "\n"
-    with open(userpath + '\\Desktop\\PyReport.csv','a') as file:
+    with open(userpath + '\\Desktop\\PyReport.txt','a') as file:
         file.write(s)
         file.close()
 
@@ -397,16 +397,19 @@ class LoginPCC:
             chrome_options.add_experimental_option('prefs', prefs)
             chrome_options.add_argument('--kiosk-printing')
             try:
-                # chromedriver_autoinstaller.install()
-                latestdriver = find_current_driver()
-                self.driver = webdriver.Chrome(os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + str(latestdriver) + '.exe', options=chrome_options)
-                to_text('Local chromedriver successfully initiated')
+                chromedriver_autoinstaller.install()
+                self.driver = webdriver.Chrome(options=chrome_options)
             except:
-                latestdriver = find_updated_driver()
-                self.driver = webdriver.Chrome(
-                    os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + str(latestdriver) + '.exe',
-                    options=chrome_options)
-                to_text('Chromedrive successfully initiated')
+                try:
+                    latestdriver = find_current_driver()
+                    self.driver = webdriver.Chrome(os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + str(latestdriver) + '.exe', options=chrome_options)
+                    to_text('Local chromedriver successfully initiated')
+                except:
+                    latestdriver = find_updated_driver()
+                    self.driver = webdriver.Chrome(
+                        os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + str(latestdriver) + '.exe',
+                        options=chrome_options)
+                    to_text('Chromedrive successfully initiated')
             try:
                 self.driver.get('https://login.pointclickcare.com/home/userLogin.xhtml?ESOLGuid=40_1572368815140')
                 time.sleep(3)
