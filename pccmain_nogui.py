@@ -310,6 +310,19 @@ def downloadIntercoReports():
     to_text('Complete')
 
 
+def downloadTrustReports(facilitylist):
+    try:
+        PCC  # check if an instance already exists
+    except NameError:  # if not
+        startPCC()  # create one
+    for facname in facilities:
+        if facname in facilitylist:
+            pcc_building = facilities[facname][2]  # pcc full name
+            PCC.buildingSelect(pcc_building)
+            time.sleep(1)
+            PCC.trust_reports()
+
+
 # run the reports
 def download_reports(facilitylist=facilityindex, reportlist=reports_list):
     global check_status
@@ -346,7 +359,7 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                             to_text('AP Aging')
                             PCC.ap_aging(facname)
                             counter += 1
-                        if report == 'AR Aging': # uses management console
+                        if report == 'AR Aging':  # uses management console
                             to_text('AR Aging')
                             PCC.ar_aging(facname, bu)
                             counter += 1
@@ -449,15 +462,17 @@ class LoginPCC:
 
     def buildingSelect(self, building):  # select your building (FULLY WORKING)
         self.driver.get("https://www12.pointclickcare.com/emc/home.jsp")
-        self.driver.find_element(By.ID, "pccFacLink").click()
-        time.sleep(1)
-        try:
-            self.driver.find_element(By.PARTIAL_LINK_TEXT, building).click() # select the building
-            time.sleep(2)                                                    # wait
-            if building not in self.driver.find_element(By.ID, "pccFacLink").get_attribute("title"):
-                to_text('Could not find ' + building)
-        except:
-            to_text('Could not get the proper page')
+        title = self.driver.find_element(By.ID, "pccFacLink").get_attribute('title')
+        if building not in title:
+            self.driver.find_element(By.ID, "pccFacLink").click()
+            time.sleep(1)
+            try:
+                self.driver.find_element(By.PARTIAL_LINK_TEXT, building).click() # select the building
+                time.sleep(2)                                                    # wait
+                if building not in self.driver.find_element(By.ID, "pccFacLink").get_attribute("title"):
+                    to_text('Could not find ' + building)
+            except:
+                to_text('Could not get the proper page')
 
     def checkSelectedBuilding(self, building):
         try:
@@ -745,7 +760,7 @@ class LoginPCC:
             time.sleep(5)  # wait
             window_after = self.driver.window_handles[1]  # set second tab
             self.driver.switch_to.window(window_after)  # select the second tab
-            self.driver.execute_script('window.print();')   #print to PDF
+            self.driver.execute_script('window.print();')   # print to PDF
             self.close_all_windows(window_before)
             renameDownloadedFile(
                 str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Revenue Reconciliation',
@@ -896,6 +911,39 @@ class LoginPCC:
         time.sleep(10)
         self.close_all_windows(window_before)
 
+    def trust_reports(self):
+        window_before = self.driver.window_handles[0]  # make window tab object
+        time.sleep(1)
+        self.driver.get("https://www12.pointclickcare.com/admin/reports/rp_ta_audit.jsp")  # audit report
+        self.driver.find_element(By.NAME, "ESOLstartdate").click()
+        self.driver.find_element(By.NAME, "ESOLstartdate").send_keys(6 * Keys.BACKSPACE)
+        self.driver.find_element(By.NAME, "ESOLstartdate").send_keys(6 * Keys.DELETE)
+        self.driver.find_element(By.NAME, "ESOLstartdate").send_keys("{}/01/{}".format(prev_month_num_str,str(report_year)))
+        self.driver.find_element(By.NAME, "ESOLenddate").click()
+        self.driver.find_element(By.NAME, "ESOLenddate").send_keys(6 * Keys.BACKSPACE)
+        self.driver.find_element(By.NAME, "ESOLenddate").send_keys(6 * Keys.DELETE)
+        self.driver.find_element(By.NAME, "ESOLenddate").send_keys("{}/31/{}".format(prev_month_num_str, str(report_year)))
+        self.driver.find_element(By.ID, "runButton").click()
+        self.driver.get("https://www12.pointclickcare.com/admin/reports/rp_ta_acct_bal.jsp")  # account balances
+        self.driver.find_element(By.NAME, "ESOLfromdate").click()
+        self.driver.find_element(By.NAME, "ESOLfromdate").send_keys(6 * Keys.BACKSPACE)
+        self.driver.find_element(By.NAME, "ESOLfromdate").send_keys(6 * Keys.DELETE)
+        self.driver.find_element(By.NAME, "ESOLfromdate").send_keys("{}/31/{}".format(prev_month_num_str, str(report_year)))
+        self.driver.find_element(By.ID, "runButton").send_keys(Keys.TAB)
+        self.driver.find_element(By.ID, "runButton").click()
+        self.driver.get("https://www12.pointclickcare.com/admin/reports/rp_detailedcensusWMY.jsp?ESOLfromER=Y&reportModule=P")  # census
+        dropdown = self.driver.find_element(By.NAME, "ESOLmonth")
+        dropdown.find_element(By.CSS_SELECTOR, "#periodspanid > select:nth-child(1) > option:nth-child(" + str(prev_month_num) + ")").click()
+        dropdown = Select(self.driver.find_element(By.NAME, "ESOLyear"))
+        dropdown.select_by_value(str(report_year))
+        self.driver.find_element(By.ID, "runButton").click()
+        self.driver.get("https://www12.pointclickcare.com/admin/reports/rp_cashreceiptsjournal_us.jsp")  # Cash receipts
+        self.driver.find_element(By.NAME, "ESOLdateselect_active").click()
+        dropdown = Select(self.driver.find_element(By.NAME, "ESOLmonthSelect"))
+        dropdown.select_by_value(str(prev_month_num))
+        dropdown = Select(self.driver.find_element(By.NAME, "ESOLyearSelect"))
+        dropdown.select_by_value(str(report_year))
+        self.driver.find_element(By.ID, "runButton").click()
 
 
 monthendtimer = multitimer.MultiTimer(interval=50, function=get_time)
@@ -911,7 +959,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
 
-        self.setMinimumSize(QSize(380, 100))  # Set sizes
+        self.setMinimumSize(QSize(380, 200))  # Set sizes
         self.setWindowTitle("PCC Reporting Program")  # Set a title
         central_widget = QWidget(self)  # Create a central widget
         self.setCentralWidget(central_widget)  # Set the central widget
@@ -935,6 +983,10 @@ class MainWindow(QMainWindow):
         self.interco_button = QPushButton('Intercompany Reports', self)
         grid_layout.addWidget(self.interco_button, 4, 0)
         self.interco_button.clicked.connect(self.open_intercowin)
+
+        self.trust_button = QPushButton('Resident Trust', self)
+        grid_layout.addWidget(self.trust_button, 5, 0)
+        self.trust_button.clicked.connect(self.open_trustwin)
 
         # Init QSystemTrayIcon
         self.tray_icon = QSystemTrayIcon(self)
@@ -984,6 +1036,10 @@ class MainWindow(QMainWindow):
 
     def open_intercowin(self):
         self.child_win2 = RunIntercoWin()
+        self.child_win2.show()
+
+    def open_trustwin(self):
+        self.child_win2 = RunTrustWin()
         self.child_win2.show()
 
     def kill_program(self):
@@ -1223,6 +1279,90 @@ class RunIntercoWin(QWidget):
         update_date(month.text(), year.text())
         self.close()
         downloadIntercoReports()
+
+class RunTrustWin(QWidget):
+    def __init__(self):
+        super(RunTrustWin, self).__init__()
+        self.title = 'Select your buildings'
+        self.left = 1200
+        self.top = 200
+        # self.width = 520
+        # self.height = 400
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+
+        mainframe = QVBoxLayout()                   # create a layout for the window
+        self.setLayout(mainframe)                   # add the layout to the window
+
+        self.cbframe = QFrame(self)                      # frame that holds the check boxes
+        self.cbframe.setFrameShape(QFrame.StyledPanel)   # add some style to the frame
+        self.cbframe.setLineWidth(0.6)
+        self.layout = QGridLayout(self.cbframe)          # create and add a layout for the frame
+        mainframe.addWidget(self.cbframe)                # add the layout to the frame
+
+        x, y = 1, 1                                     # add checkboxes to the layout of cbframe
+        for item in facilities:                         #
+            cb = QCheckBox(str(item))                   #
+            cb.setChecked(False)                        # set all checkboxes to unchecked
+            self.layout.addWidget(cb, y, x)             #
+            y += 1                                      #
+            if y >= 10:                                 #
+                x += 1                                  #
+                y = 1                                   #
+
+        dateframe = QFrame(self)
+        self.datelayout = QFormLayout(dateframe)
+        mainframe.addWidget(dateframe)
+
+        monthtextbox = QLineEdit(self)
+        monthtextbox.setText(prev_month_num_str)
+        monthtextbox.setFixedSize(100,20)
+        self.datelayout.addRow('Month:', monthtextbox)
+        yeartextbox = QLineEdit(self)
+        yeartextbox.setText(str(report_year))
+        yeartextbox.setFixedSize(100,20)
+        self.datelayout.addRow('Year:', yeartextbox)
+
+        btnframe = QFrame(self)                     # create a new frame for save and run, check all, uncheck all
+        btnlayout = QGridLayout(btnframe)           # create and add a layout for the frame
+        mainframe.addWidget(btnframe)               # add the frame to the main frame
+
+        saverunbtn = QPushButton('Save and Run', self)
+        btnlayout.addWidget(saverunbtn, 1,1)
+        saverunbtn.clicked.connect(self.checkCheckboxes)
+        selectallbtn = QPushButton('Check All', self)
+        btnlayout.addWidget(selectallbtn, 1, 2)
+        selectallbtn.clicked.connect(self.selectCheckboxes)
+        unselectallbtn = QPushButton('Uncheck All', self)
+        btnlayout.addWidget(unselectallbtn, 1, 3)
+        unselectallbtn.clicked.connect(self.unselectCheckboxes)
+
+    def checkCheckboxes(self):
+        fac_checked_list = []
+        rpt_checked_list = []
+
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            if chbox.isChecked():
+                fac_checked_list.append(chbox.text())
+
+        month = self.datelayout.itemAt(1).widget()
+        year = self.datelayout.itemAt(3).widget()
+        update_date(month.text(), year.text())
+        self.close()
+        downloadTrustReports(fac_checked_list)
+
+    def selectCheckboxes(self):
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            chbox.setChecked(True)
+
+    def unselectCheckboxes(self):
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            chbox.setChecked(False)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
