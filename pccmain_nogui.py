@@ -546,6 +546,7 @@ class LoginPCC:
             app = xw.apps.active
             time.sleep(2)
             wb.activate(steal_focus=True)  # focus the new instance
+            time.sleep(1)
             pyautogui.hotkey('ctrl', 'v')  # paste
             time.sleep(2)  # wait to load
             try:
@@ -642,6 +643,7 @@ class LoginPCC:
             app = xw.apps.active
             time.sleep(2)
             wb.activate(steal_focus=True)  # focus the new instance
+            time.sleep(1)
             pyautogui.hotkey('ctrl', 'v')  # paste
             time.sleep(2)  # wait to load
             try:
