@@ -288,6 +288,7 @@ def downloadIncomeStmtM2M(facilitylist):
         PCC  # check if an instance already exists
     except NameError:  # if not
         startPCC()  # create one
+    deleteDownloads()
     for facname in facilities:
         if facname in facilitylist:
             to_text("Downloading income statement: " + facname)
@@ -424,7 +425,7 @@ class LoginPCC:
                         options=chrome_options)
                     to_text('Chromedrive successfully initiated')
             try:
-                self.driver.get('https://login.pointclickcare.com/home/userLogin.xhtml?ESOLGuid=40_1572368815140')
+                self.driver.get('https://login.pointclickcare.com/home/userLogin.xhtml')
                 time.sleep(3)
                 f = open("info.txt", "r")
                 u = f.readline().split(',')
@@ -491,9 +492,8 @@ class LoginPCC:
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
-            self.driver.get('https://www12.pointclickcare.com/glap/reports/glapreports.jsp')
+            self.driver.get('https://www30.pointclickcare.com/glap/reports/rp_customglreports.jsp?ESOLrepId=555')
             time.sleep(1)
-            self.driver.find_element(By.LINK_TEXT, "Income Statement - System with Census - M-to-M").click()
             self.driver.find_element(By.NAME, "ESOLyear").click()
             dropdown = self.driver.find_element(By.NAME, "ESOLyear")
             dropdown.find_element(By.XPATH, "//option[. = " + str(year) + "]").click()
@@ -518,9 +518,8 @@ class LoginPCC:
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
-            self.driver.get("https://www12.pointclickcare.com/glap/reports/glapreports.jsp")
+            self.driver.get("https://www30.pointclickcare.com/glap/reports/rp_aptrialbalance.xhtml")
             time.sleep(1)
-            self.driver.find_element(By.LINK_TEXT, "A/P Trial Balance - NEW").click()
             self.driver.find_element(By.CSS_SELECTOR, "tr:nth-child(3) label:nth-child(3) > input").click()
             self.driver.find_element(By.NAME, "ESOLmonth").click()
             time.sleep(1)
@@ -768,8 +767,7 @@ class LoginPCC:
         try:
             print("Closing the month of " + str(prev_month_abbr))
             window_before = self.driver.window_handles[0]  # make window tab object
-            self.driver.get('https://www12.pointclickcare.com/glap/setup/glapsetup.jsp')
-            self.driver.find_element(By.LINK_TEXT, "Fiscal Calendar Setup").click()
+            self.driver.get('https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp')
             self.driver.find_element(By.CSS_SELECTOR,
                                      "#expandoTabDivAP > div > table > tbody > tr:nth-child(2) > td:nth-child(1) > a:nth-child(1)").click()
             window_after = self.driver.window_handles[1]  # set second tab
@@ -786,8 +784,7 @@ class LoginPCC:
         try:
             # print("Closing the month of " + str(prev_month_abbr))
             window_before = self.driver.window_handles[0]  # make window tab object
-            self.driver.get('https://www12.pointclickcare.com/glap/setup/glapsetup.jsp')
-            self.driver.find_element(By.LINK_TEXT, "Fiscal Calendar Setup").click()
+            self.driver.get('https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp')
             self.driver.find_element(By.CSS_SELECTOR,
                                      "#expandoTabDivGL > div > table > tbody > tr:nth-child(2) > td:nth-child(1) > a:nth-child(1)").click()
             window_after = self.driver.window_handles[1]  # set second tab
