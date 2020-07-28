@@ -461,7 +461,7 @@ class LoginPCC:
         self.driver.switch_to.window(firstwindow)
 
     def buildingSelect(self, building):  # select your building (FULLY WORKING)
-        self.driver.get("https://www12.pointclickcare.com/emc/home.jsp")
+        self.driver.get("https://www30.pointclickcare.com/home/home.jsp")
         title = self.driver.find_element(By.ID, "pccFacLink").get_attribute('title')
         if building not in title:
             self.driver.find_element(By.ID, "pccFacLink").click()
@@ -481,7 +481,7 @@ class LoginPCC:
             else:
                 return False
         except:
-            self.driver.get("https://www12.pointclickcare.com/emc/home.jsp")
+            self.driver.get("https://www30.pointclickcare.com/home/home.jsp")
             if building in self.driver.find_element(By.ID, "pccFacLink").get_attribute("title"):
                 return True
             else:
@@ -579,13 +579,12 @@ class LoginPCC:
             time.sleep(1)
             if title.text != "Enterprise Management Console":
                 iter = False
-                self.driver.get("https://www12.pointclickcare.com/emc/home.jsp")
+                self.driver.get("https://www30.pointclickcare.com/home/home.jsp")
                 self.driver.find_element(By.ID, "pccFacLink").click()
                 time.sleep(1)
                 self.driver.find_element(By.CSS_SELECTOR, "#facTabs .pccButton").click()  # go to management console
                 time.sleep(1)
-                self.driver.get("https://www12.pointclickcare.com/emc/reporting.jsp?EMCmodule=P")  # go to reports
-                self.driver.find_element(By.LINK_TEXT, "AR Aging").click()                      # go to ar aging report
+            self.driver.get("https://www30.pointclickcare.com/emc/admin/reports/rp_araging_us.jsp")  # go to reports
             self.driver.find_element(By.LINK_TEXT, "select").click()                            # click facilities
             window_after = self.driver.window_handles[1]                                        # set second tab
             self.driver.switch_to.window(window_after)                                          # select the second tab
@@ -621,9 +620,8 @@ class LoginPCC:
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
-            self.driver.get("https://www12.pointclickcare.com/admin/reports/adminreports.jsp?ESOLtabtype=P")
+            self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_arreconciliation_us.jsp")
             time.sleep(1)
-            self.driver.find_element(By.LINK_TEXT, "A/R Reconciliation").click()
             self.driver.find_element(By.NAME, "ESOLmonthSelect").click()
             dropdown = self.driver.find_element(By.NAME, "ESOLmonthSelect")
             dropdown.find_element(By.XPATH, "//option[. = \'" + prev_month_abbr + "\']").click()
@@ -671,9 +669,8 @@ class LoginPCC:
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
-            self.driver.get("https://www12.pointclickcare.com/admin/reports/adminreports.jsp?ESOLtabtype=P")
+            self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_cashreceiptsjournal_us.jsp")
             time.sleep(1)
-            self.driver.find_element(By.LINK_TEXT, "Cash Receipts Journal").click()
             self.driver.find_element(By.NAME, "ESOLdateselect_active").click()
             self.driver.find_element(By.NAME, "ESOLmonthSelect").click()
             dropdown = self.driver.find_element(By.NAME, "ESOLmonthSelect")
@@ -697,9 +694,8 @@ class LoginPCC:
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
-            self.driver.get("https://www12.pointclickcare.com/admin/reports/adminreports.jsp?ESOLtabtype=P")
+            self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_detailedcensusWMY.jsp?ESOLfromER=Y&reportModule=P")
             time.sleep(1)
-            self.driver.find_element(By.LINK_TEXT, "Detailed Census").click()
             self.driver.find_element(By.CSS_SELECTOR, "#summBySections label").click()
             self.driver.find_element(By.NAME, "ESOLmonth").click()
             dropdown = self.driver.find_element(By.NAME, "ESOLmonth")
@@ -725,9 +721,8 @@ class LoginPCC:
         try:
             time.sleep(1)
             window_before = self.driver.window_handles[0]  # make window tab object
-            self.driver.get("https://www12.pointclickcare.com/admin/reports/adminreports.jsp?ESOLtabtype=P")
+            self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_journalentries_fac_us.xhtml?action=setupReport")
             time.sleep(1)
-            self.driver.find_element(By.LINK_TEXT, "Journal Entries").click()
             self.driver.find_element(By.NAME, "ESOLmonthSelect").click()
             dropdown = self.driver.find_element(By.NAME, "ESOLmonthSelect")
             dropdown.find_element(By.CSS_SELECTOR,
@@ -748,9 +743,8 @@ class LoginPCC:
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
-            self.driver.get("https://www12.pointclickcare.com/admin/reports/adminreports.jsp?ESOLtabtype=P")
+            self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_revenuerec_us.jsp")
             time.sleep(1)
-            self.driver.find_element(By.LINK_TEXT, "Revenue Reconciliation").click()
             self.driver.find_element(By.NAME, "ESOLmonthSelect").click()
             dropdown = self.driver.find_element(By.NAME, "ESOLmonthSelect")
             dropdown.find_element(By.CSS_SELECTOR, "#postingControls > select:nth-child(1) > option:nth-child(" + str(
@@ -855,12 +849,12 @@ class LoginPCC:
         title = self.driver.find_element(By.ID, "pccFacLink")
         time.sleep(1)
         if title.text != "Enterprise Management Console":
-            self.driver.get("https://www12.pointclickcare.com/emc/home.jsp")
+            self.driver.get("https://www30.pointclickcare.com/home/home.jsp")
             self.driver.find_element(By.ID, "pccFacLink").click()
             time.sleep(1)
             self.driver.find_element(By.CSS_SELECTOR, "#facTabs .pccButton").click()  # go to management console
             time.sleep(1)
-        self.driver.get("https://www12.pointclickcare.com/glap/reports/rp_gltransactions.xhtml")  # GLAP Reports
+        self.driver.get("https://www30.pointclickcare.com/glap/reports/rp_gltransactions.xhtml")  # GL transactions
         time.sleep(4)
         dropdown = Select(self.driver.find_element(By.NAME, "ESOLperstart"))               # month selector
         dropdown.select_by_value(str(prev_month_num))
@@ -891,7 +885,7 @@ class LoginPCC:
         self.close_all_windows(window_before)                                       # end of GL transactions
         renameDownloadedFile("PCC Interco.csv")
         # download balance sheet
-        self.driver.get("https://www12.pointclickcare.com/glap/reports/rp_customglreports.jsp?ESOLrepId=5")
+        self.driver.get("https://www30.pointclickcare.com/glap/reports/rp_customglreports.jsp?ESOLrepId=5")
         self.driver.find_element(By.CSS_SELECTOR, "#dateRange > table > tbody > tr > td:nth-child(" + str(prev_month_num) + ") > input[type=checkbox]:nth-child(3)").click()
         dropdown = Select(self.driver.find_element(By.NAME, "ESOLyear"))
         dropdown.select_by_value(str(report_year))
@@ -915,7 +909,7 @@ class LoginPCC:
     def trust_reports(self):
         window_before = self.driver.window_handles[0]  # make window tab object
         time.sleep(1)
-        self.driver.get("https://www12.pointclickcare.com/admin/reports/rp_ta_audit.jsp")  # audit report
+        self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_ta_audit.jsp")  # audit report
         self.driver.find_element(By.NAME, "ESOLstartdate").click()
         self.driver.find_element(By.NAME, "ESOLstartdate").send_keys(6 * Keys.BACKSPACE)
         self.driver.find_element(By.NAME, "ESOLstartdate").send_keys(6 * Keys.DELETE)
@@ -925,20 +919,20 @@ class LoginPCC:
         self.driver.find_element(By.NAME, "ESOLenddate").send_keys(6 * Keys.DELETE)
         self.driver.find_element(By.NAME, "ESOLenddate").send_keys("{}/31/{}".format(prev_month_num_str, str(report_year)))
         self.driver.find_element(By.ID, "runButton").click()
-        self.driver.get("https://www12.pointclickcare.com/admin/reports/rp_ta_acct_bal.jsp")  # account balances
+        self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_ta_acct_bal.jsp")  # account balances
         self.driver.find_element(By.NAME, "ESOLfromdate").click()
         self.driver.find_element(By.NAME, "ESOLfromdate").send_keys(6 * Keys.BACKSPACE)
         self.driver.find_element(By.NAME, "ESOLfromdate").send_keys(6 * Keys.DELETE)
         self.driver.find_element(By.NAME, "ESOLfromdate").send_keys("{}/31/{}".format(prev_month_num_str, str(report_year)))
         self.driver.find_element(By.ID, "runButton").send_keys(Keys.TAB)
         self.driver.find_element(By.ID, "runButton").click()
-        self.driver.get("https://www12.pointclickcare.com/admin/reports/rp_detailedcensusWMY.jsp?ESOLfromER=Y&reportModule=P")  # census
+        self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_detailedcensusWMY.jsp?ESOLfromER=Y&reportModule=P")  # census
         dropdown = self.driver.find_element(By.NAME, "ESOLmonth")
         dropdown.find_element(By.CSS_SELECTOR, "#periodspanid > select:nth-child(1) > option:nth-child(" + str(prev_month_num) + ")").click()
         dropdown = Select(self.driver.find_element(By.NAME, "ESOLyear"))
         dropdown.select_by_value(str(report_year))
         self.driver.find_element(By.ID, "runButton").click()
-        self.driver.get("https://www12.pointclickcare.com/admin/reports/rp_cashreceiptsjournal_us.jsp")  # Cash receipts
+        self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_cashreceiptsjournal_us.jsp")  # Cash receipts
         self.driver.find_element(By.NAME, "ESOLdateselect_active").click()
         dropdown = Select(self.driver.find_element(By.NAME, "ESOLmonthSelect"))
         dropdown.select_by_value(str(prev_month_num))
