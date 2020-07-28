@@ -346,7 +346,7 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                 time.sleep(1)
                 for report in reportlist:
                     if check_status:
-                        if counter >= 60:           # close and create new instance after certain # of reports pulled so chrome doesn't stall
+                        if counter >= 40:           # close and create new instance after certain # of reports pulled so chrome doesn't stall
                             to_text('starting new chrome instance')
                             PCC.teardown_method()   # close window
                             del PCC                 # delete instance
@@ -815,13 +815,12 @@ class LoginPCC:
             sundaystr = str(sunday.month) + "/" + str(sunday.day) + "/" + str(sunday.year)
             # to_text("Pulling report for date ending " + str(sundaystr))
             window_before = self.driver.window_handles[0]  # make window tab object
-            self.driver.get("https://www12.pointclickcare.com/emc/home.jsp")
             self.driver.find_element(By.ID, "pccFacLink").click()
             time.sleep(1)
             self.driver.find_element(By.CSS_SELECTOR, "#facTabs .pccButton").click()
             # self.driver.find_element(By.XPATH, '//*[@id="facTabs"]/tbody/tr/td[2]/input]')
             time.sleep(1)
-            self.driver.get("https://www12.pointclickcare.com/emc/reporting.jsp?EMCmodule=P")
+            self.driver.get("https://www30.pointclickcare.com/enterprisereporting/listing.xhtml#?searchTerm=&tabView=1&forceReportTab=true&subModuleId=")
             self.driver.find_element(By.LINK_TEXT, "Detailed Census Reports").click()
             self.driver.find_element(By.CSS_SELECTOR, "tr:nth-child(3) label:nth-child(1)").click()  # click button weekly
             self.driver.find_element(By.CSS_SELECTOR, ".groupBy label:nth-child(2) > input").click()  # click facilities
