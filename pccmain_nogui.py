@@ -44,6 +44,8 @@ except:
     pass
 
 global newpathtext
+global PCC
+global check_status
 
 # collect user info
 username = os.environ['USERNAME']
@@ -192,7 +194,7 @@ def renameDownloadedFile(newfilename, dirpath=''):  # renames file most recent f
             to_text('Moved to: ' + destfile)                                   # END BACKUP LOCATION
     except:
         to_text("Issue renaming/moving to " + str(dirpath))
-        to_text(newfilename + extention + " is in Downloads folder")
+        to_text(newfilename + " is in Downloads folder")
 
 
 # open autofillfinancials folder
@@ -296,6 +298,7 @@ def downloadIncomeStmtM2M(facilitylist):
             time.sleep(1)
             PCC.IS_M2M(str(report_year), facname)  # run reports
     PCC.teardown_method()
+    os.startfile("C:\\Users\\tyler.anderson\\Desktop\\AutoFillFinancials\\")
     to_text("Income statements downloaded")
 
 
@@ -336,7 +339,7 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
         check_status = True
         try:
             PCC  # check if an instance already exists
-        except NameError:  # if not
+        except:  # if not
             startPCC()  # create one
         for facname in facilities:                      # loop thrugh buildings
             if facname in facilitylist:                 # is this building checked
@@ -980,6 +983,11 @@ class MainWindow(QMainWindow):
         grid_layout.addWidget(self.trust_button, 5, 0)
         self.trust_button.clicked.connect(self.open_trustwin)
 
+        # status box
+        # self.status_box = QTextBrowser(self)
+        # grid_layout.addWidget(self.status_box, 6, 0)
+        # self.text_out("Hello")
+
         # Init QSystemTrayIcon
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(self.style().standardIcon(QStyle.SP_ComputerIcon))
@@ -1262,7 +1270,7 @@ class RunIntercoWin(QWidget):
         mainframe.addWidget(btnframe)               # add the frame to the main frame
 
         saverunbtn = QPushButton('Save and Run', self)
-        btnlayout.addWidget(saverunbtn, 1,1)
+        btnlayout.addWidget(saverunbtn, 1, 1)
         saverunbtn.clicked.connect(self.runInterco)
 
     def runInterco(self):
@@ -1271,6 +1279,7 @@ class RunIntercoWin(QWidget):
         update_date(month.text(), year.text())
         self.close()
         downloadIntercoReports()
+
 
 class RunTrustWin(QWidget):
     def __init__(self):
@@ -1310,11 +1319,11 @@ class RunTrustWin(QWidget):
 
         monthtextbox = QLineEdit(self)
         monthtextbox.setText(prev_month_num_str)
-        monthtextbox.setFixedSize(100,20)
+        monthtextbox.setFixedSize(100, 20)
         self.datelayout.addRow('Month:', monthtextbox)
         yeartextbox = QLineEdit(self)
         yeartextbox.setText(str(report_year))
-        yeartextbox.setFixedSize(100,20)
+        yeartextbox.setFixedSize(100, 20)
         self.datelayout.addRow('Year:', yeartextbox)
 
         btnframe = QFrame(self)                     # create a new frame for save and run, check all, uncheck all
@@ -1355,6 +1364,7 @@ class RunTrustWin(QWidget):
         for i in range(self.layout.count()):
             chbox = self.layout.itemAt(i).widget()
             chbox.setChecked(False)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

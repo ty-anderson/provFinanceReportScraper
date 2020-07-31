@@ -1,7 +1,6 @@
 from os import listdir, environ
-from os.path import isfile, join
 import datetime
-from collections import Counter
+import xlwings as xw
 
 """
 This will count how many reports have been run for each facility, informing you of ones that are missing.
@@ -11,15 +10,7 @@ then it will create a report on the desktop to inform you so you can run the mis
 reportmonth = datetime.date.today().month - 1
 userpath = environ['USERPROFILE']
 
-
-def to_text(message):
-    s = str(str(message) + "\n")
-    with open(userpath + '\\Desktop\\Month End Reports.txt','a') as file:
-        file.write(s)
-        file.close()
-
-
-mypath = [r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Aging',
+mypath = [r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AP Aging',
           r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Aging',
           r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Rollforward',
           r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Cash Receipts',
@@ -27,20 +18,46 @@ mypath = [r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Aging',
           r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Journal Entries',
           r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation']
 
+wb = xw.Book()
+
 for path in mypath:
-    check_list = []
-    full_list = []
+    if path == mypath[0]:
+        tabname = "AP Aging"
+    if path == mypath[1]:
+        tabname = "AR Aging"
+    if path == mypath[2]:
+        tabname = "AR Rollforward"
+    if path == mypath[3]:
+        tabname = "Cash Receipts"
+    if path == mypath[4]:
+        tabname = "Census"
+    if path == mypath[5]:
+        tabname = "Journal Entries"
+    if path == mypath[6]:
+        tabname = "Revenue Recon"
+    wb.sheets.add(tabname)
+    sht = wb.sheets[tabname]
+    x = 1
+    y = 1
+    col_header = '2020 01'
     for f in listdir(path):
-        year = f[:4]
-        month = f[5:7]
-        fsplit = f[8:]
-        check_list.append(fsplit)
-        full_list.append(f)
+        s = f.split()
+        if len(s) > 1:
+            year = s[0]
+            month = s[1]
+            if y > 1:
+                try:
+                    if sht.range(x, y - 1).value[8:] != f[8:]:
+                        sht.api.rows(x).insert
+                        sht.range(x, y).color = (255, 94, 94)
+                except:
+                    pass
+            if col_header != str(year + ' ' + month):
+                y += 1
+                x = 1
+                col_header = str(year + ' ' + month)
+            sht.range(x, y).value = f
+            x += 1
+    wb.sheets[tabname].autofit('c')
 
-    c = Counter(check_list)
-
-    for item in c:
-        if c[item] != reportmonth:
-            to_text(item + " " + str(c[item]))
-
-to_text('Done')
+wb.sheets['Sheet1'].delete()
