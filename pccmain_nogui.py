@@ -51,7 +51,7 @@ global check_status
 username = os.environ['USERNAME']
 userpath = os.environ['USERPROFILE']
 
-# collect date info
+"""Setup date info"""
 today = datetime.date.today()
 current_year = today.year
 prev_month_num = today.month - 1
@@ -69,7 +69,7 @@ if prev_month_num == 0:
     prev_month_word = calendar.month_name[prev_month_num]
     report_year = today.year - 1
 
-# get paths to map out how data flows if not connected to the VPN
+"""Get paths to map out how data flows if not connected to the VPN"""
 try:
     # faclistpath = 'P:\\PACS\\Finance\\General Info\\Finance Misc\\Facility List.xlsx'
     faclistpath = "P:\\PACS\\Finance\\Automation\\PCC Reporting\\pcc webscraping.xlsx"
@@ -84,7 +84,7 @@ except FileNotFoundError:  # if VPN is not connected use the one last saved
 facility_df = pd.read_excel(faclistpath, sheet_name='Automation', index_col=0)
 facilities_df = pd.read_excel(faclistpath, sheet_name='Automation', index_col=0, usecols=['Common Name', 'Accountant'])
 
-# create all lists and dictionaries
+"""Create All lists and dictionaries"""
 facilityindex = facility_df.index.to_list()
 accountants = facility_df['Accountant'].to_list()
 fac_number = facility_df['Business Unit'].to_list()
@@ -115,6 +115,7 @@ def get_time():
 
 
 def to_text(message):
+    """Write to text file to notify user"""
     s = str(datetime.datetime.now().strftime("%H:%M:%S")) + ">>  " + str(message) + "\n"
     with open(userpath + '\\Desktop\\PyReport.txt','a') as file:
         file.write(s)
@@ -122,6 +123,7 @@ def to_text(message):
 
 
 def update_date(monthinput='', yearinput=''):
+    """If date info needs to change"""
     global prev_month_num_str
     global prev_month_word
     global prev_month_num
@@ -145,24 +147,15 @@ def update_date(monthinput='', yearinput=''):
     to_text('Reporting date is ' + prev_month_abbr + ' ' + str(report_year))
 
 
-# pull user's name
-def getName(user=username):
-    username_parse = user.split(".")
-    name = ""
-    for x in username_parse:
-        x = x.capitalize()
-        name = name + " " + x
-    return name
-
-
 def deleteDownloads():
+    """Deletes everything in downloads folder"""
     filelist = glob.glob(userpath + '\\Downloads\\*')
     for f in filelist:
         os.remove(f)
 
 
-# rename and move files
-def renameDownloadedFile(newfilename, dirpath=''):  # renames file most recent file in downloads folder and moves it to dirpath
+def renameDownloadedFile(newfilename, dirpath=''):
+    """Renames most recent file in downloads folder and moves it to dirpath"""
     global newpathtext
     try:
         newptext = newpathtext
@@ -197,13 +190,8 @@ def renameDownloadedFile(newfilename, dirpath=''):  # renames file most recent f
         to_text(newfilename + " is in Downloads folder")
 
 
-# open autofillfinancials folder
-def openFinancialsFolder():  # open hidden folder on desktop that holds downloaded financials
-    to_text("Opening AutoFillFinancials folder")
-    os.startfile(userpath + '\\Desktop\\AutoFillFinancials\\')
-
-
 def convert_to_xlsx():
+    """Opens non-xlsx file and saves as xlsx"""
     listoffiles = glob.glob(userpath + '\\Downloads\\*')  # get a list of files
     latestfile = max(listoffiles, key=os.path.getctime)  # find the latest file
     extention = os.path.splitext(latestfile)[1]  # get the extension of the latest file
@@ -214,8 +202,8 @@ def convert_to_xlsx():
     excel.Application.Quit()
 
 
-# get latest driver from the shared drive and add to user documents folder
 def find_updated_driver():
+    """Pulls latest driver from shared drive and addes to user's documents folder"""
     folder = 'P:\\PACS\\Finance\\Automation\\Chromedrivers\\'
     file_list = []
     if os.path.isdir(folder):
@@ -236,8 +224,8 @@ def find_updated_driver():
         to_text('Could not find P:\\PACS\\Finance\\Automation\\Chromedrivers\\')
 
 
-# check the current driver version on your computer
 def find_current_driver():
+    """Uses driver that is stored on your computer"""
     folder = os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\'
     file_list = []
     if os.path.isdir(folder):
@@ -249,14 +237,14 @@ def find_current_driver():
         return max(file_list)
 
 
-# start a new instance of class pcc
 def startPCC():
+    """Start new instance of class PCC"""
     global PCC
     PCC = LoginPCC()
 
 
-# download census report for kindred buildings
 def downloadKindredReport():
+    """Download census reports for Kindred buildings"""
     to_text("Downloading weekly census report for Kindred buildings")
     try:
         PCC  # check if an instance already exists
@@ -284,25 +272,28 @@ def downloadKindredReport():
     to_text('Process has finished')
 
 
-# initiate download of reports
 def downloadIncomeStmtM2M(facilitylist):
+    """Download income statements for prelims"""
     try:
         PCC  # check if an instance already exists
     except NameError:  # if not
         startPCC()  # create one
     deleteDownloads()
     for facname in facilities:
+        bu = str(facilities[facname][1])
+        if len(bu) < 2:
+            bu = str(0) + bu
         if facname in facilitylist:
             to_text("Downloading income statement: " + facname)
-            PCC.buildingSelect(facname)  # get next building in the list on chrome
-            time.sleep(1)
-            PCC.IS_M2M(str(report_year), facname)  # run reports
+            if PCC.buildingSelect(bu):  # get next building in the list on chrome
+                time.sleep(1)
+                PCC.IS_M2M(str(report_year), facname)  # run reports
     PCC.teardown_method()
-    os.startfile("C:\\Users\\tyler.anderson\\Desktop\\AutoFillFinancials\\")
     to_text("Income statements downloaded")
 
 
 def downloadIntercoReports():
+    """Download intercompany reports needed to reconcile"""
     deleteDownloads()
     try:
         PCC  # check if an instance already exists
@@ -315,20 +306,24 @@ def downloadIntercoReports():
 
 
 def downloadTrustReports(facilitylist):
+    """Download reports to reconcile trust per building"""
     try:
         PCC  # check if an instance already exists
     except NameError:  # if not
         startPCC()  # create one
     for facname in facilities:
         if facname in facilitylist:
-            pcc_building = facilities[facname][2]  # pcc full name
-            PCC.buildingSelect(pcc_building)
-            time.sleep(1)
-            PCC.trust_reports()
+            bu = str(facilities[facname][1])
+            if len(bu) < 2:
+                bu = str(0) + bu
+            if PCC.buildingSelect(bu):
+                time.sleep(1)
+                PCC.trust_reports()
 
 
 # run the reports
 def download_reports(facilitylist=facilityindex, reportlist=reports_list):
+    """Download month end close reports"""
     global check_status
     global PCC
     deleteDownloads()
@@ -341,54 +336,54 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
             PCC  # check if an instance already exists
         except:  # if not
             startPCC()  # create one
-        for facname in facilities:                      # loop thrugh buildings
-            if facname in facilitylist:                 # is this building checked
-                pcc_building = facilities[facname][2]   # pcc full name
-                bu = facilities[facname][1]
+        for facname in facilities:                      # LOOP BUILDING LIST
+            if facname in facilitylist:                 # IS BUILDING CHECHED
+                bu = str(facilities[facname][1])        # GET BU
+                if len(bu) < 2:
+                    bu = str(0) + bu
                 to_text(facname)
-                PCC.buildingSelect(pcc_building)    # select building in PCC
-                time.sleep(1)
-                for report in reportlist:
-                    if check_status:
-                        if counter >= 40:           # close and create new instance after certain # of reports pulled so chrome doesn't stall
-                            to_text('starting new chrome instance')
-                            PCC.teardown_method()   # close window
-                            del PCC                 # delete instance
-                            startPCC()              # start new instance
-                            counter = 0             # reset counter
-                            time.sleep(6)           # wait for site to load
-                        if not PCC.checkSelectedBuilding(pcc_building):     # verify correct building selected in PCC
-                            PCC.buildingSelect(pcc_building)                # if not then select correct building
-                        if report == 'AP Aging':
-                            to_text('AP Aging')
-                            PCC.ap_aging(facname)
-                            counter += 1
-                        if report == 'AR Aging':  # uses management console
-                            to_text('AR Aging')
-                            PCC.ar_aging(facname, bu)
-                            counter += 1
-                        if report == 'AR Rollforward':
-                            to_text('AR Rollforward')
-                            PCC.ar_rollforward(facname)
-                            counter += 1
-                        if report == 'Cash Reciepts Journal':
-                            to_text('Cash Recipts Journal')
-                            PCC.cash_receipts(facname)
-                            counter += 1
-                        if report == 'Detailed Census':
-                            to_text('Detailed Census')
-                            PCC.census(facname)
-                            counter += 1
-                        if report == 'Journal Entries':
-                            to_text('Journal Entries')
-                            PCC.journal_entries(facname)
-                            counter += 1
-                        if report == 'Revenue Reconciliation':
-                            to_text('Revenue Reconciliation')
-                            PCC.revenuerec(facname)
-                            counter += 1
-                    else:
-                        to_text('There is an issue with the chromedriver')
+                if PCC.buildingSelect(bu):
+                    time.sleep(1)
+                    for report in reportlist:
+                        if check_status:
+                            if counter >= 40:           # RESTART PCC AFTER # OF REPORTS SO CHROME DOESN'T STALL
+                                to_text('starting new chrome instance')
+                                PCC.teardown_method()
+                                del PCC                 # delete instance
+                                startPCC()              # start new instance
+                                counter = 0             # reset counter
+                                time.sleep(6)
+                            if report == 'AP Aging':
+                                to_text('AP Aging')
+                                PCC.ap_aging(facname)
+                                counter += 1
+                            if report == 'AR Aging':         # USES MGMT CONSOLE
+                                to_text('AR Aging')
+                                bu = facilities[facname][1]  # TO SELECT BUILDING IN AR REPORT
+                                PCC.ar_aging(facname, bu)
+                                counter += 1
+                            if report == 'AR Rollforward':
+                                to_text('AR Rollforward')
+                                PCC.ar_rollforward(facname)
+                                counter += 1
+                            if report == 'Cash Reciepts Journal':
+                                to_text('Cash Recipts Journal')
+                                PCC.cash_receipts(facname)
+                                counter += 1
+                            if report == 'Detailed Census':
+                                to_text('Detailed Census')
+                                PCC.census(facname)
+                                counter += 1
+                            if report == 'Journal Entries':
+                                to_text('Journal Entries')
+                                PCC.journal_entries(facname)
+                                counter += 1
+                            if report == 'Revenue Reconciliation':
+                                to_text('Revenue Reconciliation')
+                                PCC.revenuerec(facname)
+                                counter += 1
+                        else:
+                            to_text('There is an issue with the chromedriver')
         to_text('Reports downloaded')
         PCC.teardown_method()
         del PCC
@@ -397,7 +392,8 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
 
 
 class LoginPCC:
-    def __init__(self):  # create an instance of this class. Begins by logging in
+    def __init__(self):
+        """Create instance, login to PCC"""
         global check_status
         try:
             chrome_options = webdriver.ChromeOptions()
@@ -452,10 +448,12 @@ class LoginPCC:
             to_text('There was an issue initiating chromedriver')
             check_status = False
 
-    def teardown_method(self):  # exit the program (FULLY WORKING)
+    def teardown_method(self):
+        """Exit browser"""
         self.driver.quit()
 
     def close_all_windows(self, firstwindow):
+        """Close all windows except for original window"""
         original_window = firstwindow
         all_windows = self.driver.window_handles
         for window in all_windows:
@@ -464,34 +462,21 @@ class LoginPCC:
                 self.driver.close()
         self.driver.switch_to.window(firstwindow)
 
-    def buildingSelect(self, building):  # select your building (FULLY WORKING)
-        self.driver.get("https://www30.pointclickcare.com/home/home.jsp")
-        title = self.driver.find_element(By.ID, "pccFacLink").get_attribute('title')
-        if building not in title:
-            self.driver.find_element(By.ID, "pccFacLink").click()
-            time.sleep(1)
-            try:
-                self.driver.find_element(By.PARTIAL_LINK_TEXT, building).click() # select the building
-                time.sleep(2)                                                    # wait
-                if building not in self.driver.find_element(By.ID, "pccFacLink").get_attribute("title"):
-                    to_text('Could not find ' + building)
-            except:
-                to_text('Could not get the proper page')
-
-    def checkSelectedBuilding(self, building):
+    def buildingSelect(self, building):
+        """Select the building using business unit"""
+        self.driver.get("https://www30.pointclickcare.com/home/home.jsp?ESOLnewlogin=Y")
+        self.driver.find_element(By.ID, "pccFacLink").click()
+        time.sleep(1)
         try:
-            if building in self.driver.find_element(By.ID, "pccFacLink").get_attribute("title"):
-                return True
-            else:
-                return False
+            self.driver.find_element(By.PARTIAL_LINK_TEXT, building).click()
+            return True
         except:
-            self.driver.get("https://www30.pointclickcare.com/home/home.jsp")
-            if building in self.driver.find_element(By.ID, "pccFacLink").get_attribute("title"):
-                return True
-            else:
-                return False
+            self.driver.get("https://www30.pointclickcare.com/home/home.jsp?ESOLnewlogin=Y")
+            to_text("Could not locate " + building + " in PCC")
+            return False
 
-    def IS_M2M(self, year, facname):  # download the income statement m-to-m report (FULLY WORKING)
+    def IS_M2M(self, year, facname):
+        """Download income statement M-to-M report (download Excel file)"""
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
@@ -513,11 +498,12 @@ class LoginPCC:
             self.close_all_windows(window_before)
             renameDownloadedFile(
                 str(prev_month_num) + " " + str(report_year) + " " + facname + ' Income Statement M-to-M',
-                userpath + "\\Desktop\\AutoFillFinancials\\")  # rename and move file
+                userpath + "\\Documents\\AutoFillFinancials\\")  # rename and move file
         except:
             to_text('There was an issue downloading')
 
-    def ap_aging(self, facname):  # download AP aging report. Paste to Excel (FULLY WORKING)
+    def ap_aging(self, facname):
+        """Download AP aging report (paste to Excel)"""
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
@@ -572,7 +558,8 @@ class LoginPCC:
         except:
             to_text('Issue downloading AP Aging: ' + facname)
 
-    def ar_aging(self,facname, bu):  # pull ar aging files - (FULLY WORKING) Saves as Excel file
+    def ar_aging(self,facname, bu):
+        """Download AR aging reports (saves Excel file)"""
         try:
             iter = True
             window_before = self.driver.window_handles[0]  # make window tab object
@@ -618,7 +605,8 @@ class LoginPCC:
         except:
             to_text('Issue downloading AR Aging: ' + facname)
 
-    def ar_rollforward(self, facname):  # download ar rollforward report.(FULLY WORKING) Paste to Excel
+    def ar_rollforward(self, facname):
+        """Download AR rollforward report (paste to Excel)"""
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
@@ -667,7 +655,8 @@ class LoginPCC:
         except:
             to_text('Issue downloading AR Rollforward: ' + facname)
 
-    def cash_receipts(self, facname):  # prints to PDF -WORKED PERFECTLY
+    def cash_receipts(self, facname):
+        """Download cash receipts report (PDF)"""
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
@@ -692,7 +681,8 @@ class LoginPCC:
         except:
             to_text('Issue downloading Cash Receipts: ' + facname)
 
-    def census(self, facname):  # prints to PDF -WORKED PERFECTLY
+    def census(self, facname):
+        """Download census report (PDF)"""
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
@@ -719,7 +709,8 @@ class LoginPCC:
         except:
             to_text('Issue downloading Census: ' + facname)
 
-    def journal_entries(self, facname):  # prints to PDF
+    def journal_entries(self, facname):
+        """Download journal entries report (PDF)"""
         try:
             time.sleep(1)
             window_before = self.driver.window_handles[0]  # make window tab object
@@ -741,7 +732,8 @@ class LoginPCC:
         except:
             to_text('Issue downloading Journal Entries: ' + facname)
 
-    def revenuerec(self, facname):  # prints to PDF
+    def revenuerec(self, facname):
+        """Download revenue reconciliation report (PDF)"""
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
@@ -766,7 +758,8 @@ class LoginPCC:
         except:
             to_text('Issue downloading Revenue Reconciliation: ' + facname)
 
-    def close_ap_periods(self):  # might have issues at end of the year
+    def close_ap_periods(self):
+        """Close AP periods (not working yet)"""
         try:
             print("Closing the month of " + str(prev_month_abbr))
             window_before = self.driver.window_handles[0]  # make window tab object
@@ -783,7 +776,8 @@ class LoginPCC:
         except:
             to_text('There was an issue downloading')
 
-    def close_gl_periods(self):  # might have issues at end of the year
+    def close_gl_periods(self):
+        """Close GL periods (not working yet)"""
         try:
             # print("Closing the month of " + str(prev_month_abbr))
             window_before = self.driver.window_handles[0]  # make window tab object
@@ -799,7 +793,8 @@ class LoginPCC:
         except:
             to_text('There was an issue downloading')
 
-    def kindredReport(self):  # download kindred report.  (FULLY WORKING)
+    def kindredReport(self):
+        """Download Kindred census report"""
         try:
             tdy = datetime.date.today()
             if tdy.weekday() == 6:
@@ -807,15 +802,12 @@ class LoginPCC:
             else:
                 sunday = (tdy + datetime.timedelta(days=(-tdy.weekday() - 1), weeks=0))  # gets previous monday
             sundaystr = str(sunday.month) + "/" + str(sunday.day) + "/" + str(sunday.year)
-            # to_text("Pulling report for date ending " + str(sundaystr))
             window_before = self.driver.window_handles[0]  # make window tab object
             self.driver.find_element(By.ID, "pccFacLink").click()
             time.sleep(1)
             self.driver.find_element(By.CSS_SELECTOR, "#facTabs .pccButton").click()
-            # self.driver.find_element(By.XPATH, '//*[@id="facTabs"]/tbody/tr/td[2]/input]')
             time.sleep(1)
-            self.driver.get("https://www30.pointclickcare.com/enterprisereporting/listing.xhtml#?searchTerm=&tabView=1&forceReportTab=true&subModuleId=")
-            self.driver.find_element(By.LINK_TEXT, "Detailed Census Reports").click()
+            self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_detailedcensusWMY.jsp?allowEMCModeCheck=true")
             self.driver.find_element(By.CSS_SELECTOR, "tr:nth-child(3) label:nth-child(1)").click()  # click button weekly
             self.driver.find_element(By.CSS_SELECTOR, ".groupBy label:nth-child(2) > input").click()  # click facilities
             window_after = self.driver.window_handles[1]  # set second tab
@@ -844,6 +836,7 @@ class LoginPCC:
             to_text('There was an issue downloading')
 
     def intercompany_reports(self):
+        """Downlaod intercompany reports to reconcile accounts"""
         window_before = self.driver.window_handles[0]  # make window tab object
         time.sleep(1)
         title = self.driver.find_element(By.ID, "pccFacLink")
@@ -907,6 +900,7 @@ class LoginPCC:
         self.close_all_windows(window_before)
 
     def trust_reports(self):
+        """Open resident trust reports"""
         window_before = self.driver.window_handles[0]  # make window tab object
         time.sleep(1)
         self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_ta_audit.jsp")  # audit report
