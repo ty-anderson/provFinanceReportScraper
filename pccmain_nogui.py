@@ -830,8 +830,8 @@ class LoginPCC:
             self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'a')  # highlight the entire page
             self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'c')  # copy the entire page
             time.sleep(1)
-            self.driver.close()
-            self.driver.switch_to.window(window_before)  # go back to original tab
+            # self.driver.close()
+            # self.driver.switch_to.window(window_before)  # go back to original tab
         except:
             to_text('There was an issue downloading')
 
@@ -862,8 +862,12 @@ class LoginPCC:
         self.driver.find_element(By.CSS_SELECTOR, "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > input[type=text]:nth-child(11)").send_keys("1340.000")
         time.sleep(1)
         self.driver.find_element(By.CSS_SELECTOR, "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > a > img").click()
+        time.sleep(1)
+        self.driver.find_element(By.CSS_SELECTOR, "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > a > img").click()
         dropdown = Select(self.driver.find_element(By.NAME, "ESOLreportOutputType"))
+        time.sleep(2)
         dropdown.select_by_value('csv')
+        time.sleep(2)
         self.driver.find_element(By.ID, "runButton").click()
         window_after = self.driver.window_handles[1]
         self.driver.switch_to.window(window_after)
