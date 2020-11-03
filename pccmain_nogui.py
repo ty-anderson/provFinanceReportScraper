@@ -150,8 +150,11 @@ def update_date(monthinput='', yearinput=''):
 def deleteDownloads():
     """Deletes everything in downloads folder"""
     filelist = glob.glob(userpath + '\\Downloads\\*')
-    for f in filelist:
-        os.remove(f)
+    try:
+        for f in filelist:
+            os.remove(f)
+    except:
+        pass
 
 
 def renameDownloadedFile(newfilename, dirpath=''):
@@ -465,15 +468,18 @@ class LoginPCC:
     def buildingSelect(self, building):
         """Select the building using business unit"""
         self.driver.get("https://www30.pointclickcare.com/home/home.jsp?ESOLnewlogin=Y")
-        self.driver.find_element(By.ID, "pccFacLink").click()
-        time.sleep(1)
         try:
-            self.driver.find_element(By.PARTIAL_LINK_TEXT, building).click()
-            return True
+            self.driver.find_element(By.ID, "pccFacLink").click()
+            time.sleep(1)
+            try:
+                self.driver.find_element(By.PARTIAL_LINK_TEXT, building).click()
+                return True
+            except:
+                self.driver.get("https://www30.pointclickcare.com/home/home.jsp?ESOLnewlogin=Y")
+                to_text("Could not locate " + building + " in PCC")
+                return False
         except:
-            self.driver.get("https://www30.pointclickcare.com/home/home.jsp?ESOLnewlogin=Y")
-            to_text("Could not locate " + building + " in PCC")
-            return False
+            to_text("Could not find the building dropdown menu")
 
     def IS_M2M(self, year, facname):
         """Download income statement M-to-M report (download Excel file)"""
