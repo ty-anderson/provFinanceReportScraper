@@ -1,6 +1,7 @@
 from os import listdir, environ
 import datetime
 import xlwings as xw
+import pandas as pd
 
 """
 This will count how many reports have been run for each facility, informing you of ones that are missing.
@@ -9,6 +10,13 @@ then it will create a report on the desktop to inform you so you can run the mis
 """
 reportmonth = datetime.date.today().month - 1
 userpath = environ['USERPROFILE']
+
+wb_ref = r"P:\PACS\Finance\Automation\PCC Reporting\pcc webscraping.xlsx"
+wb = pd.read_excel(wb_ref, sheet_name='Automation', usecols=['Common Name'])
+
+wb_list = wb['Common Name'].to_list()
+
+print(wb_list)
 
 mypath = [r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AP Aging',
           r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Aging',

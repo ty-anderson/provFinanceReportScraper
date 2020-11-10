@@ -77,7 +77,8 @@ try:
         os.mkdir(userpath + '\\Documents\\PCC HUB\\')  # make directory for backup in documents folder
         shutil.copyfile(faclistpath, userpath + '\\Documents\\PCC HUB\\pcc webscraping.xlsx')  # make backup file
     except FileExistsError:
-        shutil.copyfile(faclistpath, userpath + '\\Documents\\PCC HUB\\pcc webscraping.xlsx')  # if folder exists just copy
+        shutil.copyfile(faclistpath,
+                        userpath + '\\Documents\\PCC HUB\\pcc webscraping.xlsx')  # if folder exists just copy
 except FileNotFoundError:  # if VPN is not connected use the one last saved
     faclistpath = userpath + '\\Documents\\PCC HUB\\pcc webscraping.xlsx'
 
@@ -111,13 +112,12 @@ def get_time():
             if now_min == 1:
                 pass
                 # download_reports()
-    print('Checked the time')
 
 
 def to_text(message):
     """Write to text file to notify user"""
     s = str(datetime.datetime.now().strftime("%H:%M:%S")) + ">>  " + str(message) + "\n"
-    with open(userpath + '\\Desktop\\PyReport.txt','a') as file:
+    with open(userpath + '\\Desktop\\PyReport.txt', 'a') as file:
         file.write(s)
         file.close()
 
@@ -166,28 +166,28 @@ def renameDownloadedFile(newfilename, dirpath=''):
         newptext = '\\'
     time.sleep(2)
     try:
-        listoffiles = glob.glob(userpath + '\\Downloads\\*')    # get a list of filesp
-        latestfile = max(listoffiles, key=os.path.getctime)     # find the latest file
-        extention = os.path.splitext(latestfile)[1]             # get the extension of the latest file
+        listoffiles = glob.glob(userpath + '\\Downloads\\*')  # get a list of filesp
+        latestfile = max(listoffiles, key=os.path.getctime)  # find the latest file
+        extention = os.path.splitext(latestfile)[1]  # get the extension of the latest file
         if dirpath == '':
-            os.rename(latestfile,userpath + '\\Downloads\\' + newfilename)
+            os.rename(latestfile, userpath + '\\Downloads\\' + newfilename)
         else:
             if newptext != '\\':
                 destfile = os.path.join(newptext, newfilename + extention)
             else:
                 destfile = os.path.join(dirpath, newfilename + extention)
             try:
-                shutil.move(latestfile, destfile)   # try to save file to original folder (if error with VPN)
-            except:                                                             # BACKUP LOCATION IF VPN GOES DOWN
-                try:                                                            # make new folder if doesn't exist
-                    os.mkdir(userpath + '\\Desktop\\temp reporting\\')          # temp file on desktop
-                    newptext = userpath + '\\Desktop\\temp reporting\\'         # temp file on desktop
+                shutil.move(latestfile, destfile)  # try to save file to original folder (if error with VPN)
+            except:  # BACKUP LOCATION IF VPN GOES DOWN
+                try:  # make new folder if doesn't exist
+                    os.mkdir(userpath + '\\Desktop\\temp reporting\\')  # temp file on desktop
+                    newptext = userpath + '\\Desktop\\temp reporting\\'  # temp file on desktop
                     destfile = os.path.join(newptext, newfilename + extention)  # form save file path
-                except FileExistsError:                                         # if folder does exist then just save
+                except FileExistsError:  # if folder does exist then just save
                     newptext = userpath + '\\Desktop\\temp reporting\\'
                     destfile = os.path.join(newptext, newfilename + extention)
-                shutil.move(latestfile, destfile)                               # MOVE AND RENAME
-            to_text('Moved to: ' + destfile)                                   # END BACKUP LOCATION
+                shutil.move(latestfile, destfile)  # MOVE AND RENAME
+            to_text('Moved to: ' + destfile)  # END BACKUP LOCATION
     except:
         to_text("Issue renaming/moving to " + str(dirpath))
         to_text(newfilename + " is in Downloads folder")
@@ -261,6 +261,7 @@ def downloadKindredReport():
     sundaystr = str(sunday.month) + "-" + str(sunday.day) + "-" + str(sunday.year)
     PCC.kindredReport()
     wb = xw.Book()  # new workbook
+    time.sleep(3)
     wb.activate(steal_focus=True)  # focus the new instance
     pyautogui.hotkey('ctrl', 'v')  # paste
     time.sleep(2)  # wait to load
@@ -339,9 +340,9 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
             PCC  # check if an instance already exists
         except:  # if not
             startPCC()  # create one
-        for facname in facilities:                      # LOOP BUILDING LIST
-            if facname in facilitylist:                 # IS BUILDING CHECHED
-                bu = str(facilities[facname][1])        # GET BU
+        for facname in facilities:  # LOOP BUILDING LIST
+            if facname in facilitylist:  # IS BUILDING CHECHED
+                bu = str(facilities[facname][1])  # GET BU
                 if len(bu) < 2:
                     bu = str(0) + bu
                 to_text(facname)
@@ -349,18 +350,18 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                     time.sleep(1)
                     for report in reportlist:
                         if check_status:
-                            if counter >= 40:           # RESTART PCC AFTER # OF REPORTS SO CHROME DOESN'T STALL
+                            if counter >= 40:  # RESTART PCC AFTER # OF REPORTS SO CHROME DOESN'T STALL
                                 to_text('starting new chrome instance')
                                 PCC.teardown_method()
-                                del PCC                 # delete instance
-                                startPCC()              # start new instance
-                                counter = 0             # reset counter
+                                del PCC  # delete instance
+                                startPCC()  # start new instance
+                                counter = 0  # reset counter
                                 time.sleep(6)
                             if report == 'AP Aging':
                                 to_text('AP Aging')
                                 PCC.ap_aging(facname)
                                 counter += 1
-                            if report == 'AR Aging':         # USES MGMT CONSOLE
+                            if report == 'AR Aging':  # USES MGMT CONSOLE
                                 to_text('AR Aging')
                                 bu = facilities[facname][1]  # TO SELECT BUILDING IN AR REPORT
                                 PCC.ar_aging(facname, bu)
@@ -409,7 +410,8 @@ class LoginPCC:
                 "selectedDestinationId": "Save as PDF",
                 "version": 2
             }
-            prefs = {'printing.print_preview_sticky_settings.appState': json.dumps(settings), "plugins.always_open_pdf_externally": True}
+            prefs = {'printing.print_preview_sticky_settings.appState': json.dumps(settings),
+                     "plugins.always_open_pdf_externally": True}
             chrome_options.add_experimental_option('prefs', prefs)
             chrome_options.add_argument('--kiosk-printing')
             try:
@@ -418,7 +420,9 @@ class LoginPCC:
             except:
                 try:
                     latestdriver = find_current_driver()
-                    self.driver = webdriver.Chrome(os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + str(latestdriver) + '.exe', options=chrome_options)
+                    self.driver = webdriver.Chrome(
+                        os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + str(latestdriver) + '.exe',
+                        options=chrome_options)
                     to_text('Local chromedriver successfully initiated')
                 except:
                     latestdriver = find_updated_driver()
@@ -564,7 +568,7 @@ class LoginPCC:
         except:
             to_text('Issue downloading AP Aging: ' + facname)
 
-    def ar_aging(self,facname, bu):
+    def ar_aging(self, facname, bu):
         """Download AR aging reports (saves Excel file)"""
         try:
             iter = True
@@ -580,15 +584,15 @@ class LoginPCC:
                 self.driver.find_element(By.CSS_SELECTOR, "#facTabs .pccButton").click()  # go to management console
                 time.sleep(1)
             self.driver.get("https://www30.pointclickcare.com/emc/admin/reports/rp_araging_us.jsp")  # go to reports
-            self.driver.find_element(By.LINK_TEXT, "select").click()                            # click facilities
-            window_after = self.driver.window_handles[1]                                        # set second tab
-            self.driver.switch_to.window(window_after)                                          # select the second tab
-            self.driver.find_element(By.CSS_SELECTOR, "#footer > input:nth-child(2)").click()   # clear all
-            self.driver.find_element(By.ID, "ESOLfacid_" + str(bu)).click()                     # select building
-            self.driver.find_element(By.CSS_SELECTOR, ".pccButton:nth-child(3)").click()        # save and exit
-            self.driver.switch_to.window(window_before)                                         # go back to original tab.  Facility is selected
+            self.driver.find_element(By.LINK_TEXT, "select").click()  # click facilities
+            window_after = self.driver.window_handles[1]  # set second tab
+            self.driver.switch_to.window(window_after)  # select the second tab
+            self.driver.find_element(By.CSS_SELECTOR, "#footer > input:nth-child(2)").click()  # clear all
+            self.driver.find_element(By.ID, "ESOLfacid_" + str(bu)).click()  # select building
+            self.driver.find_element(By.CSS_SELECTOR, ".pccButton:nth-child(3)").click()  # save and exit
+            self.driver.switch_to.window(window_before)  # go back to original tab.  Facility is selected
             if not iter:
-                dropdown = self.driver.find_element(By.NAME, "ESOLmonthSelect")                 # select the reporting date
+                dropdown = self.driver.find_element(By.NAME, "ESOLmonthSelect")  # select the reporting date
                 dropdown.find_element(By.XPATH, "//option[. = \'" + prev_month_word + "\']").click()
                 self.driver.find_element(By.NAME, "ESOLmonthSelect").click()
                 dropdown = Select(self.driver.find_element(By.NAME, "ESOLyearSelect"))
@@ -671,16 +675,17 @@ class LoginPCC:
             self.driver.find_element(By.NAME, "ESOLdateselect_active").click()
             self.driver.find_element(By.NAME, "ESOLmonthSelect").click()
             dropdown = self.driver.find_element(By.NAME, "ESOLmonthSelect")
-            dropdown.find_element(By.CSS_SELECTOR, "#pickdate > select:nth-child(2) > option:nth-child(" + str(prev_month_num) + ")").click()
+            dropdown.find_element(By.CSS_SELECTOR, "#pickdate > select:nth-child(2) > option:nth-child(" + str(
+                prev_month_num) + ")").click()
             self.driver.find_element(By.NAME, "ESOLmonthSelect").click()
             self.driver.find_element(By.NAME, "ESOLmonthSelect").click()
             dropdown = Select(self.driver.find_element(By.NAME, "ESOLyearSelect"))
             dropdown.select_by_value(str(report_year))
             self.driver.find_element(By.ID, "runButton").click()
             time.sleep(5)  # wait
-            window_after = self.driver.window_handles[1]    # set second tab
-            self.driver.switch_to.window(window_after)      # select the second tab
-            self.driver.execute_script('window.print();')   # print to PDF
+            window_after = self.driver.window_handles[1]  # set second tab
+            self.driver.switch_to.window(window_after)  # select the second tab
+            self.driver.execute_script('window.print();')  # print to PDF
             self.close_all_windows(window_before)
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Cash Receipts',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Cash Receipts\\')
@@ -692,7 +697,8 @@ class LoginPCC:
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
-            self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_detailedcensusWMY.jsp?ESOLfromER=Y&reportModule=P")
+            self.driver.get(
+                "https://www30.pointclickcare.com/admin/reports/rp_detailedcensusWMY.jsp?ESOLfromER=Y&reportModule=P")
             time.sleep(1)
             self.driver.find_element(By.CSS_SELECTOR, "#summBySections label").click()
             self.driver.find_element(By.NAME, "ESOLmonth").click()
@@ -706,9 +712,9 @@ class LoginPCC:
             self.driver.find_element(By.ID, "ESOLtotalByPayer").click()
             self.driver.find_element(By.ID, "runButton").click()
             time.sleep(5)  # wait
-            window_after = self.driver.window_handles[1]    # set second tab
-            self.driver.switch_to.window(window_after)      # select the second tab
-            self.driver.execute_script('window.print();')   # print to PDF
+            window_after = self.driver.window_handles[1]  # set second tab
+            self.driver.switch_to.window(window_after)  # select the second tab
+            self.driver.execute_script('window.print();')  # print to PDF
             self.close_all_windows(window_before)
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Census',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Census\\')
@@ -720,7 +726,8 @@ class LoginPCC:
         try:
             time.sleep(1)
             window_before = self.driver.window_handles[0]  # make window tab object
-            self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_journalentries_fac_us.xhtml?action=setupReport")
+            self.driver.get(
+                "https://www30.pointclickcare.com/admin/reports/rp_journalentries_fac_us.xhtml?action=setupReport")
             time.sleep(1)
             self.driver.find_element(By.NAME, "ESOLmonthSelect").click()
             dropdown = self.driver.find_element(By.NAME, "ESOLmonthSelect")
@@ -756,7 +763,7 @@ class LoginPCC:
             time.sleep(5)  # wait
             window_after = self.driver.window_handles[1]  # set second tab
             self.driver.switch_to.window(window_after)  # select the second tab
-            self.driver.execute_script('window.print();')   # print to PDF
+            self.driver.execute_script('window.print();')  # print to PDF
             self.close_all_windows(window_before)
             renameDownloadedFile(
                 str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Revenue Reconciliation',
@@ -769,7 +776,8 @@ class LoginPCC:
         try:
             print("Closing the month of " + str(prev_month_abbr))
             window_before = self.driver.window_handles[0]  # make window tab object
-            self.driver.get('https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp')
+            self.driver.get(
+                'https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp')
             self.driver.find_element(By.CSS_SELECTOR,
                                      "#expandoTabDivAP > div > table > tbody > tr:nth-child(2) > td:nth-child(1) > a:nth-child(1)").click()
             window_after = self.driver.window_handles[1]  # set second tab
@@ -787,7 +795,8 @@ class LoginPCC:
         try:
             # print("Closing the month of " + str(prev_month_abbr))
             window_before = self.driver.window_handles[0]  # make window tab object
-            self.driver.get('https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp')
+            self.driver.get(
+                'https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp')
             self.driver.find_element(By.CSS_SELECTOR,
                                      "#expandoTabDivGL > div > table > tbody > tr:nth-child(2) > td:nth-child(1) > a:nth-child(1)").click()
             window_after = self.driver.window_handles[1]  # set second tab
@@ -813,8 +822,10 @@ class LoginPCC:
             time.sleep(1)
             self.driver.find_element(By.CSS_SELECTOR, "#facTabs .pccButton").click()
             time.sleep(1)
-            self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_detailedcensusWMY.jsp?allowEMCModeCheck=true")
-            self.driver.find_element(By.CSS_SELECTOR, "tr:nth-child(3) label:nth-child(1)").click()  # click button weekly
+            self.driver.get(
+                "https://www30.pointclickcare.com/admin/reports/rp_detailedcensusWMY.jsp?allowEMCModeCheck=true")
+            self.driver.find_element(By.CSS_SELECTOR,
+                                     "tr:nth-child(3) label:nth-child(1)").click()  # click button weekly
             self.driver.find_element(By.CSS_SELECTOR, ".groupBy label:nth-child(2) > input").click()  # click facilities
             window_after = self.driver.window_handles[1]  # set second tab
             self.driver.switch_to.window(window_after)  # select the second tab
@@ -855,7 +866,7 @@ class LoginPCC:
             time.sleep(1)
         self.driver.get("https://www30.pointclickcare.com/glap/reports/rp_gltransactions.xhtml")  # GL transactions
         time.sleep(4)
-        dropdown = Select(self.driver.find_element(By.NAME, "ESOLperstart"))               # month selector
+        dropdown = Select(self.driver.find_element(By.NAME, "ESOLperstart"))  # month selector
         dropdown.select_by_value(str(prev_month_num))
         dropdown = Select(self.driver.find_element(By.NAME, "ESOLyrstart"))
         dropdown.select_by_value(str(report_year))
@@ -864,12 +875,17 @@ class LoginPCC:
         dropdown = Select(self.driver.find_element(By.NAME, "ESOLyrend"))
         dropdown.select_by_value(str(report_year))
         time.sleep(1)
-        self.driver.find_element(By.CSS_SELECTOR, "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > input[type=radio]:nth-child(10)").click()
-        self.driver.find_element(By.CSS_SELECTOR, "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > input[type=text]:nth-child(11)").send_keys("1340.000")
+        self.driver.find_element(By.CSS_SELECTOR,
+                                 "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > input[type=radio]:nth-child(10)").click()
+        self.driver.find_element(By.CSS_SELECTOR,
+                                 "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > input[type=text]:nth-child(11)").send_keys(
+            "1340.000")
         time.sleep(1)
-        self.driver.find_element(By.CSS_SELECTOR, "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > a > img").click()
+        self.driver.find_element(By.CSS_SELECTOR,
+                                 "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > a > img").click()
         time.sleep(1)
-        self.driver.find_element(By.CSS_SELECTOR, "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > a > img").click()
+        self.driver.find_element(By.CSS_SELECTOR,
+                                 "body > table:nth-child(15) > tbody > tr:nth-child(19) > td:nth-child(3) > a > img").click()
         dropdown = Select(self.driver.find_element(By.NAME, "ESOLreportOutputType"))
         time.sleep(2)
         dropdown.select_by_value('csv')
@@ -885,11 +901,12 @@ class LoginPCC:
             except:
                 time.sleep(5)
         time.sleep(10)
-        self.close_all_windows(window_before)                                       # end of GL transactions
+        self.close_all_windows(window_before)  # end of GL transactions
         renameDownloadedFile("PCC Interco.csv")
         # download balance sheet
         self.driver.get("https://www30.pointclickcare.com/glap/reports/rp_customglreports.jsp?ESOLrepId=5")
-        self.driver.find_element(By.CSS_SELECTOR, "#dateRange > table > tbody > tr > td:nth-child(" + str(prev_month_num) + ") > input[type=checkbox]:nth-child(3)").click()
+        self.driver.find_element(By.CSS_SELECTOR, "#dateRange > table > tbody > tr > td:nth-child(" + str(
+            prev_month_num) + ") > input[type=checkbox]:nth-child(3)").click()
         dropdown = Select(self.driver.find_element(By.NAME, "ESOLyear"))
         dropdown.select_by_value(str(report_year))
         self.driver.find_element(By.NAME, "ESOLcomparefacs").click()
@@ -901,7 +918,8 @@ class LoginPCC:
         self.driver.switch_to.window(window_after)
         while True:
             try:
-                self.driver.find_element(By.CSS_SELECTOR, "#ExportDiv > form > table > tbody > tr:nth-child(2) > td > input:nth-child(1)").click()
+                self.driver.find_element(By.CSS_SELECTOR,
+                                         "#ExportDiv > form > table > tbody > tr:nth-child(2) > td > input:nth-child(1)").click()
                 self.driver.switch_to.window(window_before)
                 break
             except:
@@ -917,22 +935,27 @@ class LoginPCC:
         self.driver.find_element(By.NAME, "ESOLstartdate").click()
         self.driver.find_element(By.NAME, "ESOLstartdate").send_keys(6 * Keys.BACKSPACE)
         self.driver.find_element(By.NAME, "ESOLstartdate").send_keys(6 * Keys.DELETE)
-        self.driver.find_element(By.NAME, "ESOLstartdate").send_keys("{}/01/{}".format(prev_month_num_str,str(report_year)))
+        self.driver.find_element(By.NAME, "ESOLstartdate").send_keys(
+            "{}/01/{}".format(prev_month_num_str, str(report_year)))
         self.driver.find_element(By.NAME, "ESOLenddate").click()
         self.driver.find_element(By.NAME, "ESOLenddate").send_keys(6 * Keys.BACKSPACE)
         self.driver.find_element(By.NAME, "ESOLenddate").send_keys(6 * Keys.DELETE)
-        self.driver.find_element(By.NAME, "ESOLenddate").send_keys("{}/31/{}".format(prev_month_num_str, str(report_year)))
+        self.driver.find_element(By.NAME, "ESOLenddate").send_keys(
+            "{}/31/{}".format(prev_month_num_str, str(report_year)))
         self.driver.find_element(By.ID, "runButton").click()
         self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_ta_acct_bal.jsp")  # account balances
         self.driver.find_element(By.NAME, "ESOLfromdate").click()
         self.driver.find_element(By.NAME, "ESOLfromdate").send_keys(6 * Keys.BACKSPACE)
         self.driver.find_element(By.NAME, "ESOLfromdate").send_keys(6 * Keys.DELETE)
-        self.driver.find_element(By.NAME, "ESOLfromdate").send_keys("{}/31/{}".format(prev_month_num_str, str(report_year)))
+        self.driver.find_element(By.NAME, "ESOLfromdate").send_keys(
+            "{}/31/{}".format(prev_month_num_str, str(report_year)))
         self.driver.find_element(By.ID, "runButton").send_keys(Keys.TAB)
         self.driver.find_element(By.ID, "runButton").click()
-        self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_detailedcensusWMY.jsp?ESOLfromER=Y&reportModule=P")  # census
+        self.driver.get(
+            "https://www30.pointclickcare.com/admin/reports/rp_detailedcensusWMY.jsp?ESOLfromER=Y&reportModule=P")  # census
         dropdown = self.driver.find_element(By.NAME, "ESOLmonth")
-        dropdown.find_element(By.CSS_SELECTOR, "#periodspanid > select:nth-child(1) > option:nth-child(" + str(prev_month_num) + ")").click()
+        dropdown.find_element(By.CSS_SELECTOR, "#periodspanid > select:nth-child(1) > option:nth-child(" + str(
+            prev_month_num) + ")").click()
         dropdown = Select(self.driver.find_element(By.NAME, "ESOLyear"))
         dropdown.select_by_value(str(report_year))
         self.driver.find_element(By.ID, "runButton").click()
@@ -947,6 +970,7 @@ class LoginPCC:
 
 monthendtimer = multitimer.MultiTimer(interval=50, function=get_time)
 monthendtimer.start()
+
 
 # GUI SECTION *************************************************************************************************
 
@@ -1064,38 +1088,38 @@ class RunReportsWin(QWidget):
     def initUI(self):
         self.setWindowTitle(self.title)
 
-        mainframe = QVBoxLayout()                   # create a layout for the window
-        self.setLayout(mainframe)                   # add the layout to the window
+        mainframe = QVBoxLayout()  # create a layout for the window
+        self.setLayout(mainframe)  # add the layout to the window
 
-        self.cbframe = QFrame(self)                      # frame that holds the check boxes
-        self.cbframe.setFrameShape(QFrame.StyledPanel)   # add some style to the frame
+        self.cbframe = QFrame(self)  # frame that holds the check boxes
+        self.cbframe.setFrameShape(QFrame.StyledPanel)  # add some style to the frame
         self.cbframe.setLineWidth(0.6)
-        self.layout = QGridLayout(self.cbframe)          # create and add a layout for the frame
-        mainframe.addWidget(self.cbframe)                # add the layout to the frame
+        self.layout = QGridLayout(self.cbframe)  # create and add a layout for the frame
+        mainframe.addWidget(self.cbframe)  # add the layout to the frame
 
-        x, y = 1, 1                                     # add checkboxes to the layout of cbframe
-        for item in facilities:                         #
-            cb = QCheckBox(str(item))                   #
-            cb.setChecked(False)                        # set all checkboxes to unchecked
-            self.layout.addWidget(cb, y, x)             #
-            y += 1                                      #
-            if y >= 10:                                 #
-                x += 1                                  #
-                y = 1                                   #
+        x, y = 1, 1  # add checkboxes to the layout of cbframe
+        for item in facilities:  #
+            cb = QCheckBox(str(item))  #
+            cb.setChecked(False)  # set all checkboxes to unchecked
+            self.layout.addWidget(cb, y, x)  #
+            y += 1  #
+            if y >= 10:  #
+                x += 1  #
+                y = 1  #
 
-        self.rptframe = QFrame(self)                         # create frame to select reports
-        self.rptlayout = QGridLayout(self.rptframe)          # create and add grid layout to the frame
-        mainframe.addWidget(self.rptframe)                   # add frame to mainframe
+        self.rptframe = QFrame(self)  # create frame to select reports
+        self.rptlayout = QGridLayout(self.rptframe)  # create and add grid layout to the frame
+        mainframe.addWidget(self.rptframe)  # add frame to mainframe
 
         x, y = 1, 1
-        for report in reports_list:                 # create reports checkboxes
-            cb = QCheckBox(report)                  #
-            cb.setChecked(False)                    #
-            self.rptlayout.addWidget(cb, y,x)       #
-            y += 1                                  #
-            if y >= 3:                              #
-                x += 1                              #
-                y = 1                               #
+        for report in reports_list:  # create reports checkboxes
+            cb = QCheckBox(report)  #
+            cb.setChecked(False)  #
+            self.rptlayout.addWidget(cb, y, x)  #
+            y += 1  #
+            if y >= 3:  #
+                x += 1  #
+                y = 1  #
 
         dateframe = QFrame(self)
         self.datelayout = QFormLayout(dateframe)
@@ -1103,26 +1127,29 @@ class RunReportsWin(QWidget):
 
         monthtextbox = QLineEdit(self)
         monthtextbox.setText(prev_month_num_str)
-        monthtextbox.setFixedSize(100,20)
+        monthtextbox.setFixedSize(100, 20)
         self.datelayout.addRow('Month:', monthtextbox)
         yeartextbox = QLineEdit(self)
         yeartextbox.setText(str(report_year))
-        yeartextbox.setFixedSize(100,20)
+        yeartextbox.setFixedSize(100, 20)
         self.datelayout.addRow('Year:', yeartextbox)
 
-        btnframe = QFrame(self)                     # create a new frame for save and run, check all, uncheck all
-        btnlayout = QGridLayout(btnframe)           # create and add a layout for the frame
-        mainframe.addWidget(btnframe)               # add the frame to the main frame
+        btnframe = QFrame(self)  # create a new frame for save and run, check all, uncheck all
+        btnlayout = QGridLayout(btnframe)  # create and add a layout for the frame
+        mainframe.addWidget(btnframe)  # add the frame to the main frame
 
         saverunbtn = QPushButton('Save and Run', self)
-        btnlayout.addWidget(saverunbtn, 1,1)
+        btnlayout.addWidget(saverunbtn, 1, 1)
         saverunbtn.clicked.connect(self.checkCheckboxes)
         selectallbtn = QPushButton('Check All', self)
         btnlayout.addWidget(selectallbtn, 1, 2)
         selectallbtn.clicked.connect(self.selectCheckboxes)
         unselectallbtn = QPushButton('Uncheck All', self)
         btnlayout.addWidget(unselectallbtn, 1, 3)
-        unselectallbtn.clicked.connect(self.unselectCheckboxes)
+        unselectallbtn.clicked.connect(self.reportCounter)
+        unselectallbtn = QPushButton('Count Reports', self)
+        btnlayout.addWidget(unselectallbtn, 1, 4)
+        unselectallbtn.clicked.connect(self.reportCounter)
 
     def checkCheckboxes(self):
         fac_checked_list = []
@@ -1154,6 +1181,32 @@ class RunReportsWin(QWidget):
             chbox = self.layout.itemAt(i).widget()
             chbox.setChecked(False)
 
+    def reportCounter(self):
+        month = self.datelayout.itemAt(1).widget()
+        year = self.datelayout.itemAt(3).widget()
+        update_date(month.text(), year.text())
+        self.close()
+        wb_ref = r"P:\PACS\Finance\Automation\PCC Reporting\pcc webscraping.xlsx"
+        wb = pd.read_excel(wb_ref, sheet_name='Automation', usecols=['Common Name'])
+        wb_list = wb['Common Name'].to_list()
+        reports_path = [r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AP Aging',
+                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Aging',
+                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Rollforward',
+                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Cash Receipts',
+                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Census',
+                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Journal Entries',
+                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation']
+        report_names = ['AP Aging.xlsx', 'AR Aging.xlsx', 'AR Rollforward.xlsx', 'Cash Receipts.pdf',
+                        'Census.pdf', 'Journal Entries.pdf', 'Revenue Reconciliation.pdf']
+        i = 0
+        for path in reports_path:
+            for building in wb_list:
+                file_name = path + '\\' + str(report_year) + ' ' + str(prev_month_num_str) + ' ' + building + ' ' + report_names[i]
+                if not os.path.exists(file_name):
+                    print(file_name + ' missing')
+            i+=1
+
+
 
 class RunIncomeStmtWin(QWidget):
     def __init__(self):
@@ -1168,24 +1221,24 @@ class RunIncomeStmtWin(QWidget):
     def initUI(self):
         self.setWindowTitle(self.title)
 
-        mainframe = QVBoxLayout()                   # create a layout for the window
-        self.setLayout(mainframe)                   # add the layout to the window
+        mainframe = QVBoxLayout()  # create a layout for the window
+        self.setLayout(mainframe)  # add the layout to the window
 
-        self.cbframe = QFrame(self)                      # frame that holds the check boxes
-        self.cbframe.setFrameShape(QFrame.StyledPanel)   # add some style to the frame
+        self.cbframe = QFrame(self)  # frame that holds the check boxes
+        self.cbframe.setFrameShape(QFrame.StyledPanel)  # add some style to the frame
         self.cbframe.setLineWidth(0.6)
-        self.layout = QGridLayout(self.cbframe)          # create and add a layout for the frame
-        mainframe.addWidget(self.cbframe)                # add the layout to the frame
+        self.layout = QGridLayout(self.cbframe)  # create and add a layout for the frame
+        mainframe.addWidget(self.cbframe)  # add the layout to the frame
 
-        x, y = 1, 1                                     # add checkboxes to the layout of cbframe
-        for item in facilities:                         #
-            cb = QCheckBox(str(item))                   #
-            cb.setChecked(False)                        # set all checkboxes to unchecked
-            self.layout.addWidget(cb, y, x)             #
-            y += 1                                      #
-            if y >= 10:                                 #
-                x += 1                                  #
-                y = 1                                   #
+        x, y = 1, 1  # add checkboxes to the layout of cbframe
+        for item in facilities:  #
+            cb = QCheckBox(str(item))  #
+            cb.setChecked(False)  # set all checkboxes to unchecked
+            self.layout.addWidget(cb, y, x)  #
+            y += 1  #
+            if y >= 10:  #
+                x += 1  #
+                y = 1  #
 
         dateframe = QFrame(self)
         self.datelayout = QFormLayout(dateframe)
@@ -1193,19 +1246,19 @@ class RunIncomeStmtWin(QWidget):
 
         monthtextbox = QLineEdit(self)
         monthtextbox.setText(prev_month_num_str)
-        monthtextbox.setFixedSize(100,20)
+        monthtextbox.setFixedSize(100, 20)
         self.datelayout.addRow('Month:', monthtextbox)
         yeartextbox = QLineEdit(self)
         yeartextbox.setText(str(report_year))
-        yeartextbox.setFixedSize(100,20)
+        yeartextbox.setFixedSize(100, 20)
         self.datelayout.addRow('Year:', yeartextbox)
 
-        btnframe = QFrame(self)                     # create a new frame for save and run, check all, uncheck all
-        btnlayout = QGridLayout(btnframe)           # create and add a layout for the frame
-        mainframe.addWidget(btnframe)               # add the frame to the main frame
+        btnframe = QFrame(self)  # create a new frame for save and run, check all, uncheck all
+        btnlayout = QGridLayout(btnframe)  # create and add a layout for the frame
+        mainframe.addWidget(btnframe)  # add the frame to the main frame
 
         saverunbtn = QPushButton('Save and Run', self)
-        btnlayout.addWidget(saverunbtn, 1,1)
+        btnlayout.addWidget(saverunbtn, 1, 1)
         saverunbtn.clicked.connect(self.checkCheckboxes)
         selectallbtn = QPushButton('Check All', self)
         btnlayout.addWidget(selectallbtn, 1, 2)
@@ -1253,8 +1306,8 @@ class RunIntercoWin(QWidget):
     def initUI(self):
         self.setWindowTitle(self.title)
 
-        mainframe = QVBoxLayout()                   # create a layout for the window
-        self.setLayout(mainframe)                   # add the layout to the window
+        mainframe = QVBoxLayout()  # create a layout for the window
+        self.setLayout(mainframe)  # add the layout to the window
 
         dateframe = QFrame(self)
         self.datelayout = QFormLayout(dateframe)
@@ -1262,16 +1315,16 @@ class RunIntercoWin(QWidget):
 
         monthtextbox = QLineEdit(self)
         monthtextbox.setText(prev_month_num_str)
-        monthtextbox.setFixedSize(100,20)
+        monthtextbox.setFixedSize(100, 20)
         self.datelayout.addRow('Month:', monthtextbox)
         yeartextbox = QLineEdit(self)
         yeartextbox.setText(str(report_year))
-        yeartextbox.setFixedSize(100,20)
+        yeartextbox.setFixedSize(100, 20)
         self.datelayout.addRow('Year:', yeartextbox)
 
-        btnframe = QFrame(self)                     # create a new frame for save and run, check all, uncheck all
-        btnlayout = QGridLayout(btnframe)           # create and add a layout for the frame
-        mainframe.addWidget(btnframe)               # add the frame to the main frame
+        btnframe = QFrame(self)  # create a new frame for save and run, check all, uncheck all
+        btnlayout = QGridLayout(btnframe)  # create and add a layout for the frame
+        mainframe.addWidget(btnframe)  # add the frame to the main frame
 
         saverunbtn = QPushButton('Save and Run', self)
         btnlayout.addWidget(saverunbtn, 1, 1)
@@ -1298,24 +1351,24 @@ class RunTrustWin(QWidget):
     def initUI(self):
         self.setWindowTitle(self.title)
 
-        mainframe = QVBoxLayout()                   # create a layout for the window
-        self.setLayout(mainframe)                   # add the layout to the window
+        mainframe = QVBoxLayout()  # create a layout for the window
+        self.setLayout(mainframe)  # add the layout to the window
 
-        self.cbframe = QFrame(self)                      # frame that holds the check boxes
-        self.cbframe.setFrameShape(QFrame.StyledPanel)   # add some style to the frame
+        self.cbframe = QFrame(self)  # frame that holds the check boxes
+        self.cbframe.setFrameShape(QFrame.StyledPanel)  # add some style to the frame
         self.cbframe.setLineWidth(0.6)
-        self.layout = QGridLayout(self.cbframe)          # create and add a layout for the frame
-        mainframe.addWidget(self.cbframe)                # add the layout to the frame
+        self.layout = QGridLayout(self.cbframe)  # create and add a layout for the frame
+        mainframe.addWidget(self.cbframe)  # add the layout to the frame
 
-        x, y = 1, 1                                     # add checkboxes to the layout of cbframe
-        for item in facilities:                         #
-            cb = QCheckBox(str(item))                   #
-            cb.setChecked(False)                        # set all checkboxes to unchecked
-            self.layout.addWidget(cb, y, x)             #
-            y += 1                                      #
-            if y >= 10:                                 #
-                x += 1                                  #
-                y = 1                                   #
+        x, y = 1, 1  # add checkboxes to the layout of cbframe
+        for item in facilities:  #
+            cb = QCheckBox(str(item))  #
+            cb.setChecked(False)  # set all checkboxes to unchecked
+            self.layout.addWidget(cb, y, x)  #
+            y += 1  #
+            if y >= 10:  #
+                x += 1  #
+                y = 1  #
 
         dateframe = QFrame(self)
         self.datelayout = QFormLayout(dateframe)
@@ -1330,12 +1383,12 @@ class RunTrustWin(QWidget):
         yeartextbox.setFixedSize(100, 20)
         self.datelayout.addRow('Year:', yeartextbox)
 
-        btnframe = QFrame(self)                     # create a new frame for save and run, check all, uncheck all
-        btnlayout = QGridLayout(btnframe)           # create and add a layout for the frame
-        mainframe.addWidget(btnframe)               # add the frame to the main frame
+        btnframe = QFrame(self)  # create a new frame for save and run, check all, uncheck all
+        btnlayout = QGridLayout(btnframe)  # create and add a layout for the frame
+        mainframe.addWidget(btnframe)  # add the frame to the main frame
 
         saverunbtn = QPushButton('Save and Run', self)
-        btnlayout.addWidget(saverunbtn, 1,1)
+        btnlayout.addWidget(saverunbtn, 1, 1)
         saverunbtn.clicked.connect(self.checkCheckboxes)
         selectallbtn = QPushButton('Check All', self)
         btnlayout.addWidget(selectallbtn, 1, 2)
