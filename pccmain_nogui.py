@@ -205,6 +205,34 @@ def convert_to_xlsx():
     excel.Application.Quit()
 
 
+def check_if_downloaded(facility, report):
+    time.sleep(3)
+    if report == "Cash Receipts Journal":
+        report_name = "Cash Receipts.pdf"
+        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Cash Receipts'
+    elif report == "AP Aging":
+        report_name = "AP Aging.xlsx"
+        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AP Aging'
+    elif report == "AR Aging":
+        report_name = "AR Aging.xlsx"
+        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Aging'
+    elif report == "AR Rollforward":
+        report_name = "AR Rollforward.xlsx"
+        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Rollforward'
+    elif report == "Census":
+        report_name = "Census.pdf"
+        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Census'
+    elif report == "Journal Entries":
+        report_name = "Journal Entries.pdf"
+        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Journal Entries'
+    elif report == "Revenue Reconciliation":
+        report_name = "Revenue Reconciliation.pdf"
+        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation'
+    file_name = report_path + '\\' + str(report_year) + ' ' + str(prev_month_num_str) + ' ' + facility + ' ' + report_name
+    if not os.path.exists(file_name):
+        print(file_name + ' missing')
+
+
 def find_updated_driver():
     """Pulls latest driver from shared drive and addes to user's documents folder"""
     folder = 'P:\\PACS\\Finance\\Automation\\Chromedrivers\\'
@@ -386,6 +414,7 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                                 to_text('Revenue Reconciliation')
                                 PCC.revenuerec(facname)
                                 counter += 1
+                            check_if_downloaded(facname, report)
                         else:
                             to_text('There is an issue with the chromedriver')
         to_text('Reports downloaded')
