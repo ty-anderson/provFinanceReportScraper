@@ -95,7 +95,7 @@ accountantlist = facility_df['Accountant'].drop_duplicates().to_list()  # make l
 reports_list = ['AP Aging',
                 'AR Aging',
                 'AR Rollforward',
-                'Cash Reciepts Journal',
+                'Cash Receipts Journal',
                 'Detailed Census',
                 'Journal Entries',
                 'Revenue Reconciliation']
@@ -219,7 +219,7 @@ def check_if_downloaded(facility, report):
     elif report == "AR Rollforward":
         report_name = "AR Rollforward.xlsx"
         report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Rollforward'
-    elif report == "Census":
+    elif report == "Detailed Census":
         report_name = "Census.pdf"
         report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Census'
     elif report == "Journal Entries":
@@ -373,47 +373,35 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                 bu = str(facilities[facname][1])  # GET BU
                 if len(bu) < 2:
                     bu = str(0) + bu
-                to_text(facname)
                 if PCC.buildingSelect(bu):
                     time.sleep(1)
                     for report in reportlist:
                         if check_status:
-                            if counter >= 40:  # RESTART PCC AFTER # OF REPORTS SO CHROME DOESN'T STALL
-                                to_text('starting new chrome instance')
-                                PCC.teardown_method()
-                                del PCC  # delete instance
-                                startPCC()  # start new instance
-                                counter = 0  # reset counter
-                                time.sleep(6)
+                            # if counter >= 40:  # RESTART PCC AFTER # OF REPORTS SO CHROME DOESN'T STALL
+                            #     to_text('starting new chrome instance')
+                            #     PCC.teardown_method()
+                            #     del PCC  # delete instance
+                            #     time.sleep(5)
+                            #     startPCC()  # start new instance
+                            #     counter = 0  # reset counter
+                            #     time.sleep(6)
                             if report == 'AP Aging':
-                                to_text('AP Aging')
                                 PCC.ap_aging(facname)
-                                counter += 1
                             if report == 'AR Aging':  # USES MGMT CONSOLE
-                                to_text('AR Aging')
                                 bu = facilities[facname][1]  # TO SELECT BUILDING IN AR REPORT
                                 PCC.ar_aging(facname, bu)
-                                counter += 1
+                                PCC.buildingSelect(str(bu))
                             if report == 'AR Rollforward':
-                                to_text('AR Rollforward')
                                 PCC.ar_rollforward(facname)
-                                counter += 1
-                            if report == 'Cash Reciepts Journal':
-                                to_text('Cash Recipts Journal')
+                            if report == 'Cash Receipts Journal':
                                 PCC.cash_receipts(facname)
-                                counter += 1
                             if report == 'Detailed Census':
-                                to_text('Detailed Census')
                                 PCC.census(facname)
-                                counter += 1
                             if report == 'Journal Entries':
-                                to_text('Journal Entries')
                                 PCC.journal_entries(facname)
-                                counter += 1
                             if report == 'Revenue Reconciliation':
-                                to_text('Revenue Reconciliation')
                                 PCC.revenuerec(facname)
-                                counter += 1
+                            counter += 1
                             check_if_downloaded(facname, report)
                         else:
                             to_text('There is an issue with the chromedriver')
@@ -501,16 +489,21 @@ class LoginPCC:
     def buildingSelect(self, building):
         """Select the building using business unit"""
         self.driver.get("https://www30.pointclickcare.com/home/home.jsp?ESOLnewlogin=Y")
+        time.sleep(2)
         try:
-            self.driver.find_element(By.ID, "pccFacLink").click()
-            time.sleep(1)
-            try:
-                self.driver.find_element(By.PARTIAL_LINK_TEXT, building).click()
+            current_fac = self.driver.find_element(By.NAME, "current_fac_id").get_attribute("value")
+            if str(current_fac) != building:
+                self.driver.find_element(By.ID, "pccFacLink").click()
+                time.sleep(2)
+                try:
+                    self.driver.find_element(By.PARTIAL_LINK_TEXT, building).click()
+                    return True
+                except:
+                    self.driver.get("https://www30.pointclickcare.com/home/home.jsp?ESOLnewlogin=Y")
+                    to_text("Could not locate " + building + " in PCC")
+                    return False
+            else:
                 return True
-            except:
-                self.driver.get("https://www30.pointclickcare.com/home/home.jsp?ESOLnewlogin=Y")
-                to_text("Could not locate " + building + " in PCC")
-                return False
         except:
             to_text("Could not find the building dropdown menu")
 
@@ -1234,7 +1227,6 @@ class RunReportsWin(QWidget):
                 if not os.path.exists(file_name):
                     print(file_name + ' missing')
             i+=1
-
 
 
 class RunIncomeStmtWin(QWidget):
