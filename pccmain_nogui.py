@@ -353,6 +353,22 @@ def downloadTrustReports(facilitylist):
                 PCC.trust_reports()
 
 
+def downloadAuditReports(facilitylist):
+    """Download reports to reconcile trust per building"""
+    try:
+        PCC  # check if an instance already exists
+    except NameError:  # if not
+        startPCC()  # create one
+    for facname in facilities:
+        if facname in facilitylist:
+            bu = str(facilities[facname][1])
+            if len(bu) < 2:
+                bu = str(0) + bu
+            if PCC.buildingSelect(bu):
+                time.sleep(1)
+                PCC.ar_credit_balances(facname)
+
+
 # run the reports
 def download_reports(facilitylist=facilityindex, reportlist=reports_list):
     """Download month end close reports"""
@@ -406,8 +422,8 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                         else:
                             to_text('There is an issue with the chromedriver')
         to_text('Reports downloaded')
-        PCC.teardown_method()
-        del PCC
+        # PCC.teardown_method()
+        # del PCC
     else:
         to_text('No reports selected.')
 
@@ -989,6 +1005,30 @@ class LoginPCC:
         dropdown.select_by_value(str(report_year))
         self.driver.find_element(By.ID, "runButton").click()
 
+    def ar_credit_balances(self, facname):
+        """Pull reports for CapFund audit"""
+        try:
+            window_before = self.driver.window_handles[0]  # make window tab object
+            time.sleep(1)
+            self.driver.get("https://www30.pointclickcare.com/admin/reports/rp_araging_us.jsp")
+            time.sleep(1)
+            self.driver.find_element(By.NAME, "ESOLmonthSelect").click()
+            dropdown = Select(self.driver.find_element(By.NAME, "ESOLmonthSelect"))
+            dropdown.select_by_value(str(prev_month_num))
+            dropdown = Select(self.driver.find_element(By.NAME, "ESOLyearSelect"))
+            dropdown.select_by_value(str(report_year))
+            self.driver.find_element(By.ID, "runButton").click()
+            time.sleep(5)  # wait
+            window_after = self.driver.window_handles[1]  # set second tab
+            self.driver.switch_to.window(window_after)  # select the second tab
+            self.driver.execute_script('window.print();')  # print to PDF
+            self.close_all_windows(window_before)
+            renameDownloadedFile(
+                str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Aging Credit Balances',
+                'P:\\PACS\\Finance\\Audit\\CapFund Bank Audit Jan 2021\\Accounts Receivable\\5 - Aged AR Credit Balances\\')
+        except:
+            to_text('Issue downloading: ' + facname)
+
 
 monthendtimer = multitimer.MultiTimer(interval=50, function=get_time)
 monthendtimer.start()
@@ -1032,6 +1072,10 @@ class MainWindow(QMainWindow):
         self.trust_button = QPushButton('Resident Trust', self)
         grid_layout.addWidget(self.trust_button, 5, 0)
         self.trust_button.clicked.connect(self.open_trustwin)
+
+        self.trust_button = QPushButton('Audit Reports', self)
+        grid_layout.addWidget(self.trust_button, 6, 0)
+        self.trust_button.clicked.connect(self.open_auditwin)
 
         # status box
         # self.status_box = QTextBrowser(self)
@@ -1090,6 +1134,10 @@ class MainWindow(QMainWindow):
 
     def open_trustwin(self):
         self.child_win2 = RunTrustWin()
+        self.child_win2.show()
+
+    def open_auditwin(self):
+        self.child_win2 = RunAuditWin()
         self.child_win2.show()
 
     def kill_program(self):
@@ -1225,7 +1273,10 @@ class RunReportsWin(QWidget):
             for building in wb_list:
                 file_name = path + '\\' + str(report_year) + ' ' + str(prev_month_num_str) + ' ' + building + ' ' + report_names[i]
                 if not os.path.exists(file_name):
-                    print(file_name + ' missing')
+                    print(file_name + ' missing.  Downloading now')
+                    rpt = report_names[i].split('.')
+                    rpt = [rpt[0]]
+                    download_reports(building, rpt)
             i+=1
 
 
@@ -1432,6 +1483,91 @@ class RunTrustWin(QWidget):
         update_date(month.text(), year.text())
         self.close()
         downloadTrustReports(fac_checked_list)
+
+    def selectCheckboxes(self):
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            chbox.setChecked(True)
+
+    def unselectCheckboxes(self):
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            chbox.setChecked(False)
+
+
+class RunAuditWin(QWidget):
+    def __init__(self):
+        super(RunAuditWin, self).__init__()
+        self.title = 'Select your buildings'
+        self.left = 1200
+        self.top = 200
+        # self.width = 520
+        # self.height = 400
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+
+        mainframe = QVBoxLayout()  # create a layout for the window
+        self.setLayout(mainframe)  # add the layout to the window
+
+        self.cbframe = QFrame(self)  # frame that holds the check boxes
+        self.cbframe.setFrameShape(QFrame.StyledPanel)  # add some style to the frame
+        self.cbframe.setLineWidth(0.6)
+        self.layout = QGridLayout(self.cbframe)  # create and add a layout for the frame
+        mainframe.addWidget(self.cbframe)  # add the layout to the frame
+
+        x, y = 1, 1  # add checkboxes to the layout of cbframe
+        for item in facilities:  #
+            cb = QCheckBox(str(item))  #
+            cb.setChecked(False)  # set all checkboxes to unchecked
+            self.layout.addWidget(cb, y, x)  #
+            y += 1  #
+            if y >= 10:  #
+                x += 1  #
+                y = 1  #
+
+        dateframe = QFrame(self)
+        self.datelayout = QFormLayout(dateframe)
+        mainframe.addWidget(dateframe)
+
+        monthtextbox = QLineEdit(self)
+        monthtextbox.setText(prev_month_num_str)
+        monthtextbox.setFixedSize(100, 20)
+        self.datelayout.addRow('Month:', monthtextbox)
+        yeartextbox = QLineEdit(self)
+        yeartextbox.setText(str(report_year))
+        yeartextbox.setFixedSize(100, 20)
+        self.datelayout.addRow('Year:', yeartextbox)
+
+        btnframe = QFrame(self)  # create a new frame for save and run, check all, uncheck all
+        btnlayout = QGridLayout(btnframe)  # create and add a layout for the frame
+        mainframe.addWidget(btnframe)  # add the frame to the main frame
+
+        saverunbtn = QPushButton('Save and Run', self)
+        btnlayout.addWidget(saverunbtn, 1, 1)
+        saverunbtn.clicked.connect(self.checkCheckboxes)
+        selectallbtn = QPushButton('Check All', self)
+        btnlayout.addWidget(selectallbtn, 1, 2)
+        selectallbtn.clicked.connect(self.selectCheckboxes)
+        unselectallbtn = QPushButton('Uncheck All', self)
+        btnlayout.addWidget(unselectallbtn, 1, 3)
+        unselectallbtn.clicked.connect(self.unselectCheckboxes)
+
+    def checkCheckboxes(self):
+        fac_checked_list = []
+        rpt_checked_list = []
+
+        for i in range(self.layout.count()):
+            chbox = self.layout.itemAt(i).widget()
+            if chbox.isChecked():
+                fac_checked_list.append(chbox.text())
+
+        month = self.datelayout.itemAt(1).widget()
+        year = self.datelayout.itemAt(3).widget()
+        update_date(month.text(), year.text())
+        self.close()
+        downloadAuditReports(fac_checked_list)
 
     def selectCheckboxes(self):
         for i in range(self.layout.count()):
