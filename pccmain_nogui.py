@@ -552,8 +552,12 @@ class LoginPCC:
             time.sleep(2)  # wait
             window_after = self.driver.window_handles[1]  # set second tab
             self.driver.switch_to.window(window_after)  # select the second tab
+            pyperclip.copy('')
             self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'a')  # highlight the entire page
-            self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'c')  # copy the entire page
+            self.driver.find_element(By.CLASS_NAME, "admin").send_keys(Keys.CONTROL, 'a')
+            time.sleep(1)
+            self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'c')  # COPY ALL CONTENT
+            self.driver.find_element(By.CLASS_NAME, "admin").send_keys(Keys.CONTROL, 'c')
             time.sleep(2)
             self.close_all_windows(window_before)
             wb = xw.Book()  # new workbook
