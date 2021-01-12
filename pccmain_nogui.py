@@ -14,11 +14,11 @@ import os
 import xlwings as xw
 import pyautogui
 import win32com
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QCheckBox, QSystemTrayIcon, \
-    QMenu, QAction, QStyle, QPushButton, QVBoxLayout, QFrame, QFormLayout, QLineEdit
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QCheckBox, \
+    QPushButton, QVBoxLayout, QFrame, QFormLayout, QLineEdit
 from PyQt5.QtCore import QSize
 import sys
-import multitimer
+import pyperclip
 
 """
 This app is a web scraper for pulling reports from PCC
@@ -55,19 +55,17 @@ userpath = os.environ['USERPROFILE']
 today = datetime.date.today()
 current_year = today.year
 prev_month_num = today.month - 1
+if prev_month_num == 0:
+    prev_month_num = 12
+    report_year = today.year - 1
 if len(str(prev_month_num)) == 1:
     prev_month_num_str = str("0" + str(prev_month_num))
 else:
     prev_month_num_str = str(prev_month_num)
 prev_month_abbr = calendar.month_abbr[prev_month_num]
 prev_month_word = calendar.month_name[prev_month_num]
-report_year = today.year
-# modify previous month if current month is January
-if prev_month_num == 0:
-    prev_month_num = 12
-    prev_month_abbr = calendar.month_abbr[prev_month_num]
-    prev_month_word = calendar.month_name[prev_month_num]
-    report_year = today.year - 1
+if prev_month_num != 12:
+    report_year = today.year
 
 """Get paths to map out how data flows if not connected to the VPN"""
 try:
@@ -83,7 +81,6 @@ except FileNotFoundError:  # if VPN is not connected use the one last saved
     faclistpath = userpath + '\\Documents\\PCC HUB\\pcc webscraping.xlsx'
 
 facility_df = pd.read_excel(faclistpath, sheet_name='Automation', index_col=0)
-facilities_df = pd.read_excel(faclistpath, sheet_name='Automation', index_col=0, usecols=['Common Name', 'Accountant'])
 
 """Create All lists and dictionaries"""
 facilityindex = facility_df.index.to_list()
@@ -99,19 +96,6 @@ reports_list = ['AP Aging',
                 'Detailed Census',
                 'Journal Entries',
                 'Revenue Reconciliation']
-
-
-def get_time():
-    today_now = time.localtime()
-    now_month = today_now.tm_mon  # month
-    now_day = today_now.tm_mday  # day
-    now_hour = today_now.tm_hour  # hour
-    now_min = today_now.tm_min  # min
-    if now_day == 15:
-        if now_hour == 20:
-            if now_min == 1:
-                pass
-                # download_reports()
 
 
 def to_text(message):
@@ -228,6 +212,9 @@ def check_if_downloaded(facility, report):
     elif report == "Revenue Reconciliation":
         report_name = "Revenue Reconciliation.pdf"
         report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation'
+    else:
+        report_name = "Issue identifying report"
+        report_path = "Issue identifying report"
     file_name = report_path + '\\' + str(report_year) + ' ' + str(prev_month_num_str) + ' ' + facility + ' ' + report_name
     if not os.path.exists(file_name):
         print(file_name + ' missing')
@@ -393,14 +380,6 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                     time.sleep(1)
                     for report in reportlist:
                         if check_status:
-                            # if counter >= 40:  # RESTART PCC AFTER # OF REPORTS SO CHROME DOESN'T STALL
-                            #     to_text('starting new chrome instance')
-                            #     PCC.teardown_method()
-                            #     del PCC  # delete instance
-                            #     time.sleep(5)
-                            #     startPCC()  # start new instance
-                            #     counter = 0  # reset counter
-                            #     time.sleep(6)
                             if report == 'AP Aging':
                                 PCC.ap_aging(facname)
                             if report == 'AR Aging':  # USES MGMT CONSOLE
@@ -502,26 +481,25 @@ class LoginPCC:
                 self.driver.close()
         self.driver.switch_to.window(firstwindow)
 
-    def buildingSelect(self, building):
+    def buildingSelect(self, bu):
         """Select the building using business unit"""
-        self.driver.get("https://www30.pointclickcare.com/home/home.jsp?ESOLnewlogin=Y")
-        time.sleep(2)
         try:
             current_fac = self.driver.find_element(By.NAME, "current_fac_id").get_attribute("value")
-            if str(current_fac) != building:
-                self.driver.find_element(By.ID, "pccFacLink").click()
-                time.sleep(2)
+            if str(current_fac) != bu:
                 try:
-                    self.driver.find_element(By.PARTIAL_LINK_TEXT, building).click()
+                    self.driver.find_element(By.ID, "pccFacLink").click()
+                    time.sleep(1)
+                    building_list = self.driver.find_element(By.ID, "optionList")
+                    building_list.find_element(By.PARTIAL_LINK_TEXT, bu).click()
                     return True
                 except:
-                    self.driver.get("https://www30.pointclickcare.com/home/home.jsp?ESOLnewlogin=Y")
-                    to_text("Could not locate " + building + " in PCC")
+                    to_text("Could not locate " + bu + " in PCC")
                     return False
             else:
                 return True
         except:
             to_text("Could not find the building dropdown menu")
+            return False
 
     def IS_M2M(self, year, facname):
         """Download income statement M-to-M report (download Excel file)"""
@@ -671,8 +649,12 @@ class LoginPCC:
             time.sleep(5)  # wait
             window_after = self.driver.window_handles[1]  # set second tab
             self.driver.switch_to.window(window_after)  # select the second tab
+            pyperclip.copy('')
             self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'a')  # highlight the entire page
-            self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'c')  # highlight the entire page
+            self.driver.find_element(By.CLASS_NAME, "admin").send_keys(Keys.CONTROL, 'a')
+            time.sleep(1)
+            self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'c')  # COPY ALL CONTENT
+            self.driver.find_element(By.CLASS_NAME, "admin").send_keys(Keys.CONTROL, 'c')
             time.sleep(5)
             self.close_all_windows(window_before)
             wb = xw.Book()  # new workbook
@@ -1030,10 +1012,6 @@ class LoginPCC:
             to_text('Issue downloading: ' + facname)
 
 
-monthendtimer = multitimer.MultiTimer(interval=50, function=get_time)
-monthendtimer.start()
-
-
 # GUI SECTION *************************************************************************************************
 
 
@@ -1082,43 +1060,6 @@ class MainWindow(QMainWindow):
         # grid_layout.addWidget(self.status_box, 6, 0)
         # self.text_out("Hello")
 
-        # Init QSystemTrayIcon
-        self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(self.style().standardIcon(QStyle.SP_ComputerIcon))
-
-        '''
-            Define and add steps to work with the system tray icon
-            show - show window
-            hide - hide window
-            exit - exit from application
-        '''
-        show_action = QAction("Open Window", self)
-        hide_action = QAction("Hide to Tray", self)
-        runall_action = QAction("Run All", self)
-        quit_action = QAction("Exit Program", self)
-        show_action.triggered.connect(self.show)
-        hide_action.triggered.connect(self.hide)
-        runall_action.triggered.connect(download_reports)
-        quit_action.triggered.connect(self.kill_program)
-        tray_menu = QMenu()
-        tray_menu.addAction(show_action)
-        tray_menu.addAction(hide_action)
-        tray_menu.addAction(runall_action)
-        tray_menu.addAction(quit_action)
-        self.tray_icon.setContextMenu(tray_menu)
-        self.tray_icon.show()
-
-    # Override closeEvent, to intercept the window closing event
-    # The window will be closed only if there is no check mark in the check box
-    def closeEvent(self, event):
-        event.ignore()
-        self.hide()
-        self.tray_icon.showMessage(
-            "Tray Program",
-            "Application was minimized to Tray",
-            QSystemTrayIcon.Information,
-            2000
-        )
 
     def open_reports(self):
         self.child_win = RunReportsWin()
@@ -1141,7 +1082,6 @@ class MainWindow(QMainWindow):
         self.child_win2.show()
 
     def kill_program(self):
-        monthendtimer.stop()
         exit()
 
 
