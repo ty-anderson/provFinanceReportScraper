@@ -15,7 +15,7 @@ import xlwings as xw
 import pyautogui
 import win32com
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QCheckBox, \
-    QPushButton, QVBoxLayout, QFrame, QFormLayout, QLineEdit
+    QPushButton, QVBoxLayout, QFrame, QFormLayout, QLineEdit, QTextBrowser, QTextEdit
 from PyQt5.QtCore import QSize
 import sys
 import pyperclip
@@ -45,7 +45,6 @@ except:
 
 global newpathtext
 global PCC
-global check_status
 
 # collect user info
 username = os.environ['USERNAME']
@@ -359,14 +358,11 @@ def downloadAuditReports(facilitylist):
 # run the reports
 def download_reports(facilitylist=facilityindex, reportlist=reports_list):
     """Download month end close reports"""
-    global check_status
     global PCC
     deleteDownloads()
-    counter = 0
     if not facilitylist:
         facilitylist = facilityindex
     if reportlist:
-        check_status = True
         try:
             PCC  # check if an instance already exists
         except:  # if not
@@ -379,7 +375,6 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                 if PCC.buildingSelect(bu):
                     time.sleep(1)
                     for report in reportlist:
-                        if check_status:
                             if report == 'AP Aging':
                                 PCC.ap_aging(facname)
                             if report == 'AR Aging':  # USES MGMT CONSOLE
@@ -396,13 +391,8 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                                 PCC.journal_entries(facname)
                             if report == 'Revenue Reconciliation':
                                 PCC.revenuerec(facname)
-                            counter += 1
                             check_if_downloaded(facname, report)
-                        else:
-                            to_text('There is an issue with the chromedriver')
         to_text('Reports downloaded')
-        # PCC.teardown_method()
-        # del PCC
     else:
         to_text('No reports selected.')
 
@@ -410,7 +400,6 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
 class LoginPCC:
     def __init__(self):
         """Create instance, login to PCC"""
-        global check_status
         try:
             chrome_options = webdriver.ChromeOptions()
             settings = {
@@ -465,7 +454,6 @@ class LoginPCC:
                 print("There is an issue with the chrome driver")
         except:
             to_text('There was an issue initiating chromedriver')
-            check_status = False
 
     def teardown_method(self):
         """Exit browser"""
@@ -795,43 +783,6 @@ class LoginPCC:
         except:
             to_text('Issue downloading Revenue Reconciliation: ' + facname)
 
-    def close_ap_periods(self):
-        """Close AP periods (not working yet)"""
-        try:
-            print("Closing the month of " + str(prev_month_abbr))
-            window_before = self.driver.window_handles[0]  # make window tab object
-            self.driver.get(
-                'https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp')
-            self.driver.find_element(By.CSS_SELECTOR,
-                                     "#expandoTabDivAP > div > table > tbody > tr:nth-child(2) > td:nth-child(1) > a:nth-child(1)").click()
-            window_after = self.driver.window_handles[1]  # set second tab
-            self.driver.switch_to.window(window_after)  # select the second tab
-            self.driver.find_element(By.XPATH, "//*[@id=\"fiscal" + str(prev_month_num) + "c\"]").click()
-            self.driver.find_element(By.XPATH, "//*[@id=\"fiscal" + str(prev_month_num + 2) + "o\"]").click()
-            self.driver.find_element(By.CSS_SELECTOR, "#msg > input:nth-child(1)").click()  # click button weekly
-            time.sleep(2)
-            self.driver.switch_to.window(window_before)  # go back to original tab
-        except:
-            to_text('There was an issue downloading')
-
-    def close_gl_periods(self):
-        """Close GL periods (not working yet)"""
-        try:
-            # print("Closing the month of " + str(prev_month_abbr))
-            window_before = self.driver.window_handles[0]  # make window tab object
-            self.driver.get(
-                'https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp')
-            self.driver.find_element(By.CSS_SELECTOR,
-                                     "#expandoTabDivGL > div > table > tbody > tr:nth-child(2) > td:nth-child(1) > a:nth-child(1)").click()
-            window_after = self.driver.window_handles[1]  # set second tab
-            self.driver.switch_to.window(window_after)  # select the second tab
-            self.driver.find_element(By.XPATH, "//*[@id=\"fiscal" + str(prev_month_num) + "c\"]").click()
-            self.driver.find_element(By.CSS_SELECTOR, "#msg > input:nth-child(1)").click()  # click button weekly
-            time.sleep(2)
-            self.driver.switch_to.window(window_before)  # go back to original tab
-        except:
-            to_text('There was an issue downloading')
-
     def kindredReport(self):
         """Download Kindred census report"""
         try:
@@ -868,11 +819,13 @@ class LoginPCC:
             time.sleep(4)  # wait
             window_after = self.driver.window_handles[1]  # set second tab
             self.driver.switch_to.window(window_after)  # select the second tab
+            pyperclip.copy('')
             self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'a')  # highlight the entire page
-            self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'c')  # copy the entire page
+            self.driver.find_element(By.CLASS_NAME, "admin").send_keys(Keys.CONTROL, 'a')
             time.sleep(1)
-            # self.driver.close()
-            # self.driver.switch_to.window(window_before)  # go back to original tab
+            self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'c')  # COPY ALL CONTENT
+            self.driver.find_element(By.CLASS_NAME, "admin").send_keys(Keys.CONTROL, 'c')
+            time.sleep(1)
         except:
             to_text('There was an issue downloading')
 
@@ -1059,11 +1012,12 @@ class MainWindow(QMainWindow):
         grid_layout.addWidget(self.trust_button, 6, 0)
         self.trust_button.clicked.connect(self.open_auditwin)
 
-        # status box
         # self.status_box = QTextBrowser(self)
-        # grid_layout.addWidget(self.status_box, 6, 0)
-        # self.text_out("Hello")
-
+        # grid_layout.addWidget(self.status_box, 7, 0)
+        # self.status_box.append("Hello")
+        self.status_box = QTextEdit()
+        grid_layout.addWidget(self.status_box, 7, 0)
+        self.setLayout(grid_layout)
 
     def open_reports(self):
         self.child_win = RunReportsWin()
@@ -1084,6 +1038,10 @@ class MainWindow(QMainWindow):
     def open_auditwin(self):
         self.child_win2 = RunAuditWin()
         self.child_win2.show()
+
+    def text_out(self, MYSTRING):
+        self.status_box.append('started appending %s' % MYSTRING)  # append string
+        QApplication.processEvents()  # update gui for pyqt
 
     def kill_program(self):
         exit()
