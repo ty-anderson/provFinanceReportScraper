@@ -15,7 +15,7 @@ import xlwings as xw
 import pyautogui
 import win32com
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QCheckBox, \
-    QPushButton, QVBoxLayout, QFrame, QFormLayout, QLineEdit, QTextBrowser, QTextEdit
+    QPushButton, QVBoxLayout, QFrame, QFormLayout, QLineEdit, QTextEdit
 from PyQt5.QtCore import QSize
 import sys
 import pyperclip
@@ -214,7 +214,8 @@ def check_if_downloaded(facility, report):
     else:
         report_name = "Issue identifying report"
         report_path = "Issue identifying report"
-    file_name = report_path + '\\' + str(report_year) + ' ' + str(prev_month_num_str) + ' ' + facility + ' ' + report_name
+    file_name = report_path + '\\' + str(report_year) + ' ' + str(
+        prev_month_num_str) + ' ' + facility + ' ' + report_name
     if not os.path.exists(file_name):
         print(file_name + ' missing')
 
@@ -368,30 +369,30 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
         except:  # if not
             startPCC()  # create one
         for facname in facilities:  # LOOP BUILDING LIST
-            if facname in facilitylist:  # IS BUILDING CHECHED
+            if facname == facilitylist:  # IS BUILDING CHECHED
                 bu = str(facilities[facname][1])  # GET BU
                 if len(bu) < 2:
                     bu = str(0) + bu
                 if PCC.buildingSelect(bu):
                     time.sleep(1)
                     for report in reportlist:
-                            if report == 'AP Aging':
-                                PCC.ap_aging(facname)
-                            if report == 'AR Aging':  # USES MGMT CONSOLE
-                                bu = facilities[facname][1]  # TO SELECT BUILDING IN AR REPORT
-                                PCC.ar_aging(facname, bu)
-                                PCC.buildingSelect(str(bu))
-                            if report == 'AR Rollforward':
-                                PCC.ar_rollforward(facname)
-                            if report == 'Cash Receipts Journal':
-                                PCC.cash_receipts(facname)
-                            if report == 'Detailed Census':
-                                PCC.census(facname)
-                            if report == 'Journal Entries':
-                                PCC.journal_entries(facname)
-                            if report == 'Revenue Reconciliation':
-                                PCC.revenuerec(facname)
-                            check_if_downloaded(facname, report)
+                        if report == 'AP Aging':
+                            PCC.ap_aging(facname)
+                        if report == 'AR Aging':            # USES MGMT CONSOLE
+                            bu = facilities[facname][1]     # TO SELECT BUILDING IN AR REPORT
+                            PCC.ar_aging(facname, bu)
+                            # PCC.buildingSelect(str(bu))
+                        if report == 'AR Rollforward':
+                            PCC.ar_rollforward(facname)
+                        if report == 'Cash Receipts Journal':
+                            PCC.cash_receipts(facname)
+                        if report == 'Detailed Census':
+                            PCC.census(facname)
+                        if report == 'Journal Entries':
+                            PCC.journal_entries(facname)
+                        if report == 'Revenue Reconciliation':
+                            PCC.revenuerec(facname)
+                        check_if_downloaded(facname, report)
         to_text('Reports downloaded')
     else:
         to_text('No reports selected.')
@@ -524,6 +525,12 @@ class LoginPCC:
             self.driver.get("https://www30.pointclickcare.com/glap/reports/rp_aptrialbalance.xhtml")
             time.sleep(1)
             self.driver.find_element(By.CSS_SELECTOR, "tr:nth-child(3) label:nth-child(3) > input").click()
+            time.sleep(2)
+            try:
+                alert = self.driver.switch_to.alert
+                alert.accept()
+            except:
+                pass
             self.driver.find_element(By.NAME, "ESOLmonth").click()
             time.sleep(1)
             dropdown = self.driver.find_element(By.NAME, "ESOLmonth")
@@ -542,10 +549,8 @@ class LoginPCC:
             self.driver.switch_to.window(window_after)  # select the second tab
             pyperclip.copy('')
             self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'a')  # highlight the entire page
-            self.driver.find_element(By.CLASS_NAME, "admin").send_keys(Keys.CONTROL, 'a')
             time.sleep(1)
             self.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.CONTROL, 'c')  # COPY ALL CONTENT
-            self.driver.find_element(By.CLASS_NAME, "admin").send_keys(Keys.CONTROL, 'c')
             time.sleep(2)
             self.close_all_windows(window_before)
             wb = xw.Book()  # new workbook
@@ -1012,9 +1017,6 @@ class MainWindow(QMainWindow):
         grid_layout.addWidget(self.trust_button, 6, 0)
         self.trust_button.clicked.connect(self.open_auditwin)
 
-        # self.status_box = QTextBrowser(self)
-        # grid_layout.addWidget(self.status_box, 7, 0)
-        # self.status_box.append("Hello")
         self.status_box = QTextEdit()
         grid_layout.addWidget(self.status_box, 7, 0)
         self.setLayout(grid_layout)
@@ -1040,7 +1042,7 @@ class MainWindow(QMainWindow):
         self.child_win2.show()
 
     def text_out(self, MYSTRING):
-        self.status_box.append('started appending %s' % MYSTRING)  # append string
+        self.status_box.append(MYSTRING)  # append string
         QApplication.processEvents()  # update gui for pyqt
 
     def kill_program(self):
@@ -1159,8 +1161,7 @@ class RunReportsWin(QWidget):
         update_date(month.text(), year.text())
         self.close()
         wb_ref = r"P:\PACS\Finance\Automation\PCC Reporting\pcc webscraping.xlsx"
-        wb = pd.read_excel(wb_ref, sheet_name='Automation', usecols=['Common Name'])
-        wb_list = wb['Common Name'].to_list()
+        wb = pd.read_excel(wb_ref, sheet_name='Automation', usecols=['Common Name', 'Business Unit'])
         reports_path = [r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AP Aging',
                         r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Aging',
                         r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Rollforward',
@@ -1172,14 +1173,16 @@ class RunReportsWin(QWidget):
                         'Census.pdf', 'Journal Entries.pdf', 'Revenue Reconciliation.pdf']
         i = 0
         for path in reports_path:
-            for building in wb_list:
-                file_name = path + '\\' + str(report_year) + ' ' + str(prev_month_num_str) + ' ' + building + ' ' + report_names[i]
+            for building in wb['Common Name']:
+                file_name = path + '\\' + str(report_year) + ' ' + str(prev_month_num_str) + ' ' + building + ' ' + \
+                            report_names[i]
                 if not os.path.exists(file_name):
                     print(file_name + ' missing.  Downloading now')
                     rpt = report_names[i].split('.')
                     rpt = [rpt[0]]
+                    bu = int(wb.loc[wb['Common Name'] == building, 'Business Unit'])
                     download_reports(building, rpt)
-            i+=1
+            i += 1
 
 
 class RunIncomeStmtWin(QWidget):
