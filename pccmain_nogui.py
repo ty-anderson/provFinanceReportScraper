@@ -381,7 +381,7 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                         if report == 'AR Aging':            # USES MGMT CONSOLE
                             bu = facilities[facname][1]     # TO SELECT BUILDING IN AR REPORT
                             PCC.ar_aging(facname, bu)
-                            # PCC.buildingSelect(str(bu))
+                            PCC.buildingSelect(str(bu))
                         if report == 'AR Rollforward':
                             PCC.ar_rollforward(facname)
                         if report == 'Cash Receipts Journal':
@@ -1160,6 +1160,7 @@ class RunReportsWin(QWidget):
         year = self.datelayout.itemAt(3).widget()
         update_date(month.text(), year.text())
         self.close()
+        counter = 0
         wb_ref = r"P:\PACS\Finance\Automation\PCC Reporting\pcc webscraping.xlsx"
         wb = pd.read_excel(wb_ref, sheet_name='Automation', usecols=['Common Name', 'Business Unit'])
         reports_path = [r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AP Aging',
@@ -1171,18 +1172,26 @@ class RunReportsWin(QWidget):
                         r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation']
         report_names = ['AP Aging.xlsx', 'AR Aging.xlsx', 'AR Rollforward.xlsx', 'Cash Receipts.pdf',
                         'Census.pdf', 'Journal Entries.pdf', 'Revenue Reconciliation.pdf']
+        print("Searching monthly reports")
         i = 0
         for path in reports_path:
             for building in wb['Common Name']:
                 file_name = path + '\\' + str(report_year) + ' ' + str(prev_month_num_str) + ' ' + building + ' ' + \
                             report_names[i]
                 if not os.path.exists(file_name):
+                    counter = counter + 1
                     print(file_name + ' missing.  Downloading now')
                     rpt = report_names[i].split('.')
                     rpt = [rpt[0]]
-                    bu = int(wb.loc[wb['Common Name'] == building, 'Business Unit'])
                     download_reports(building, rpt)
+                else:
+                    size = os.path.getsize(file_name)
+                    kb = size/(1024)
+                    if kb < 10:
+                        print(file_name + " might be empty.  Please check.")
             i += 1
+        if counter == 0:
+            print("Reports have all been downloaded")
 
 
 class RunIncomeStmtWin(QWidget):
