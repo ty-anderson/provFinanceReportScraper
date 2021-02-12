@@ -190,7 +190,7 @@ def convert_to_xlsx():
 
 def check_if_downloaded(facility, report):
     time.sleep(3)
-    if report == "Cash Receipts Journal":
+    if report == "Cash Receipts":
         report_name = "Cash Receipts.pdf"
         report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Cash Receipts'
     elif report == "AP Aging":
@@ -202,7 +202,7 @@ def check_if_downloaded(facility, report):
     elif report == "AR Rollforward":
         report_name = "AR Rollforward.xlsx"
         report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Rollforward'
-    elif report == "Detailed Census":
+    elif report == "Census":
         report_name = "Census.pdf"
         report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Census'
     elif report == "Journal Entries":
@@ -212,8 +212,9 @@ def check_if_downloaded(facility, report):
         report_name = "Revenue Reconciliation.pdf"
         report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation'
     else:
-        report_name = "Issue identifying report"
-        report_path = "Issue identifying report"
+        # report_name = "Issue identifying report"
+        # report_path = "Issue identifying report"
+        pass
     file_name = report_path + '\\' + str(report_year) + ' ' + str(
         prev_month_num_str) + ' ' + facility + ' ' + report_name
     if not os.path.exists(file_name):
@@ -384,9 +385,9 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                             PCC.buildingSelect(str(bu))
                         if report == 'AR Rollforward':
                             PCC.ar_rollforward(facname)
-                        if report == 'Cash Receipts Journal':
+                        if report == 'Cash Receipts':
                             PCC.cash_receipts(facname)
-                        if report == 'Detailed Census':
+                        if report == 'Census':
                             PCC.census(facname)
                         if report == 'Journal Entries':
                             PCC.journal_entries(facname)
@@ -529,6 +530,18 @@ class LoginPCC:
             try:
                 alert = self.driver.switch_to.alert
                 alert.accept()
+                pyperclip.copy("Fiscal period has not been setup")
+                wb = xw.Book()  # new workbook
+                app = xw.apps.active
+                time.sleep(2)
+                wb.activate(steal_focus=True)  # focus the new instance
+                time.sleep(1)
+                pyautogui.hotkey('ctrl', 'v')  # paste
+                time.sleep(2)  # wait to load
+                wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AP Aging\\" +
+                        str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
+                app.quit()
+                to_text(facname + ' AP aging saved to shared drive')
             except:
                 pass
             self.driver.find_element(By.NAME, "ESOLmonth").click()
