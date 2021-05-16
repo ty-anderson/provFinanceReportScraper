@@ -91,7 +91,7 @@ accountantlist = facility_df['Accountant'].drop_duplicates().to_list()  # make l
 reports_list = ['AP Aging',
                 'AR Aging',
                 'AR Rollforward',
-                'Cash Receipts Journal',
+                'Cash Receipts',
                 'Detailed Census',
                 'Journal Entries',
                 'Revenue Reconciliation']
@@ -480,8 +480,15 @@ class LoginPCC:
                     self.driver.find_element(By.ID, "pccFacLink").click()
                     time.sleep(1)
                     building_list = self.driver.find_element(By.ID, "optionList")
-                    building_list.find_element(By.PARTIAL_LINK_TEXT, bu).click()
-                    return True
+                    options_split = building_list.text.splitlines()
+                    for option in options_split:
+                        bu_pull = option.replace(" ", "")
+                        bu_pull = bu_pull[-5:].split("-")
+                        bu_val = bu_pull[1]
+                        if bu_val == bu:
+                            print(option)
+                            building_list.find_element(By.PARTIAL_LINK_TEXT, option).click()
+                            return True
                 except:
                     to_text("Could not locate " + bu + " in PCC")
                     return False
@@ -530,13 +537,15 @@ class LoginPCC:
             try:
                 alert = self.driver.switch_to.alert
                 alert.accept()
-                pyperclip.copy("Fiscal period has not been setup")
+                pyperclip.copy("Fiscal period has not been setup for this entity.  No transactions recorded.")
                 wb = xw.Book()  # new workbook
                 app = xw.apps.active
                 time.sleep(2)
                 wb.activate(steal_focus=True)  # focus the new instance
                 time.sleep(1)
                 pyautogui.hotkey('ctrl', 'v')  # paste
+                wb.sheets[0].range("A1:P20").color = (102, 153, 255)
+                wb.sheets[0].range("A1:P20").api.Font.Bold = True
                 time.sleep(2)  # wait to load
                 wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AP Aging\\" +
                         str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
@@ -669,9 +678,14 @@ class LoginPCC:
             self.close_all_windows(window_before)
             wb = xw.Book()  # new workbook
             app = xw.apps.active
+            actwb = app.books.active
+            sht = actwb.sheets.active
             time.sleep(2)
-            wb.activate(steal_focus=True)  # focus the new instance
+            actwb.activate(steal_focus=True)
+            sht.activate()
+            # wb.activate(steal_focus=True)  # focus the new instance
             time.sleep(1)
+            # wb.sheets[0].paste()
             pyautogui.hotkey('ctrl', 'v')  # paste
             time.sleep(2)  # wait to load
             try:
@@ -768,7 +782,7 @@ class LoginPCC:
             dropdown = Select(self.driver.find_element(By.NAME, "ESOLyearSelect"))
             dropdown.select_by_value(str(report_year))
             self.driver.find_element(By.ID, "runButton").click()
-            time.sleep(10)  # wait
+            time.sleep(5)  # wait
             self.close_all_windows(window_before)
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Journal Entries',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Journal Entries\\')
@@ -1134,7 +1148,7 @@ class RunReportsWin(QWidget):
         unselectallbtn = QPushButton('Uncheck All', self)
         btnlayout.addWidget(unselectallbtn, 1, 3)
         unselectallbtn.clicked.connect(self.reportCounter)
-        unselectallbtn = QPushButton('Count Reports', self)
+        unselectallbtn = QPushButton('Run All', self)
         btnlayout.addWidget(unselectallbtn, 1, 4)
         unselectallbtn.clicked.connect(self.reportCounter)
 
