@@ -729,7 +729,20 @@ class LoginPCC:
             time.sleep(5)  # wait
             window_after = self.driver.window_handles[1]  # set second tab
             self.driver.switch_to.window(window_after)  # select the second tab
-            self.driver.execute_script('window.print();')  # print to PDF
+            time.sleep(5)
+            html = self.driver.page_source
+            while True:
+                if "--PROCESSING--" not in html:
+                    break
+                else:
+                    time.sleep(5)
+            while True:
+                try:
+                    self.driver.execute_script('window.print();')  # print to PDF
+                    break
+                except:
+                    time.sleep(5)
+            time.sleep(5)
             self.close_all_windows(window_before)
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Cash Receipts',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Cash Receipts\\')
@@ -758,7 +771,20 @@ class LoginPCC:
             time.sleep(5)  # wait
             window_after = self.driver.window_handles[1]  # set second tab
             self.driver.switch_to.window(window_after)  # select the second tab
-            self.driver.execute_script('window.print();')  # print to PDF
+            time.sleep(5)
+            html = self.driver.page_source
+            while True:
+                if "--PROCESSING--" not in html:
+                    break
+                else:
+                    time.sleep(5)
+            while True:
+                try:
+                    self.driver.execute_script('window.print();')  # print to PDF
+                    break
+                except:
+                    time.sleep(5)
+            time.sleep(5)
             self.close_all_windows(window_before)
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Census',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Census\\')
@@ -782,8 +808,7 @@ class LoginPCC:
             dropdown = Select(self.driver.find_element(By.NAME, "ESOLyearSelect"))
             dropdown.select_by_value(str(report_year))
             self.driver.find_element(By.ID, "runButton").click()
-            time.sleep(5)  # wait
-            self.close_all_windows(window_before)
+            time.sleep(20)
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Journal Entries',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Journal Entries\\')
         except:
@@ -807,7 +832,20 @@ class LoginPCC:
             time.sleep(5)  # wait
             window_after = self.driver.window_handles[1]  # set second tab
             self.driver.switch_to.window(window_after)  # select the second tab
-            self.driver.execute_script('window.print();')  # print to PDF
+            time.sleep(5)
+            html = self.driver.page_source
+            while True:
+                if "--PROCESSING--" not in html:
+                    break
+                else:
+                    time.sleep(5)
+            while True:
+                try:
+                    self.driver.execute_script('window.print();')  # print to PDF
+                    break
+                except:
+                    time.sleep(5)
+            time.sleep(5)
             self.close_all_windows(window_before)
             renameDownloadedFile(
                 str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Revenue Reconciliation',
@@ -1000,8 +1038,9 @@ class LoginPCC:
         except:
             to_text('Issue downloading: ' + facname)
 
-
-# GUI SECTION *************************************************************************************************
+######################
+#### GUI SECTION #####
+######################
 
 
 class MainWindow(QMainWindow):
