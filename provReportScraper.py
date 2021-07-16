@@ -474,6 +474,11 @@ class LoginPCC:
     def buildingSelect(self, bu):
         """Select the building using business unit"""
         try:
+            time.sleep(5)
+            self.driver.find_element(By.ID, "pendo-button-6dee10f").click()
+        except:
+            pass
+        try:
             current_fac = self.driver.find_element(By.NAME, "current_fac_id").get_attribute("value")
             if str(current_fac) != bu:
                 try:
