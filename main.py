@@ -19,6 +19,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWid
 from PyQt5.QtCore import QSize
 import sys
 import pyperclip
+from threading import Thread, Event
+from queue import Queue
 
 """
 This app is a web scraper for pulling reports from PCC
@@ -45,6 +47,11 @@ except:
 
 global newpathtext
 global PCC
+global q
+global event
+
+q = Queue()
+event = Event()
 
 # collect user info
 username = os.environ['USERNAME']
@@ -87,7 +94,6 @@ accountants = facility_df['Accountant'].to_list()
 fac_number = facility_df['Business Unit'].to_list()
 pcc_name = facility_df['PCC Name'].to_list()
 facilities = dict(zip(facilityindex, zip(accountants, fac_number, pcc_name)))
-accountantlist = facility_df['Accountant'].drop_duplicates().to_list()  # make list of all accountants
 reports_list = ['AP Aging',
                 'AR Aging',
                 'AR Rollforward',
@@ -95,14 +101,6 @@ reports_list = ['AP Aging',
                 'Detailed Census',
                 'Journal Entries',
                 'Revenue Reconciliation']
-
-
-def to_text(message):
-    """Write to text file to notify user"""
-    s = str(datetime.datetime.now().strftime("%H:%M:%S")) + ">>  " + str(message) + "\n"
-    with open(userpath + '\\Desktop\\PyReport.txt', 'a') as file:
-        file.write(s)
-        file.close()
 
 
 def update_date(monthinput='', yearinput=''):
@@ -127,7 +125,49 @@ def update_date(monthinput='', yearinput=''):
         report_year = int(yearinput)
     except ValueError:
         report_year = report_year
-    to_text('Reporting date is ' + prev_month_abbr + ' ' + str(report_year))
+    main_window.update_textbox('Reporting date is ' + prev_month_abbr + ' ' + str(report_year))
+
+
+def check_reports():
+    counter = 0
+    wb = pd.read_excel(r"P:\PACS\Finance\Automation\PCC Reporting\pcc webscraping.xlsx", sheet_name='Automation',
+                       usecols=['Common Name', 'Business Unit'])
+    reports_path = [r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AP Aging',
+                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Aging',
+                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Rollforward',
+                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Cash Receipts',
+                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Census',
+                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Journal Entries',
+                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation']
+    report_names = ['AP Aging.xlsx', 'AR Aging.xlsx', 'AR Rollforward.xlsx', 'Cash Receipts.pdf',
+                    'Census.pdf', 'Journal Entries.pdf', 'Revenue Reconciliation.pdf']
+    # q.put("Searching monthly reports")
+    main_window.update_textbox("Searching monthly reports")
+    i = 0
+    for path in reports_path:
+        for building in wb['Common Name']:
+            file_name = path + '\\' + str(report_year) + ' ' + str(prev_month_num_str) + ' ' + building + ' ' + \
+                        report_names[i]
+            if not os.path.exists(file_name):
+                counter = counter + 1
+                # q.put(file_name + ' missing.  Downloading now')
+                main_window.update_textbox(file_name + ' missing.  Downloading now')
+                rpt = report_names[i].split('.')
+                rpt = [rpt[0]]
+                download_reports(building, rpt)
+            else:
+                size = os.path.getsize(file_name)
+                kb = size / 1024
+                if kb < 10:
+                    # q.put(file_name + " might be empty.  Please check.")
+                    main_window.update_textbox(file_name + " might be empty.  Please check.")
+            # q.put(f"Completed {building} {file_name}")
+            main_window.update_textbox(f"Completed {building} {file_name}")
+        i += 1
+    if counter == 0:
+        # q.put("Reports have all been downloaded")
+        # event.set()
+        main_window.update_textbox("Reports have all been downloaded")
 
 
 def deleteDownloads():
@@ -170,10 +210,10 @@ def renameDownloadedFile(newfilename, dirpath=''):
                     newptext = userpath + '\\Desktop\\temp reporting\\'
                     destfile = os.path.join(newptext, newfilename + extention)
                 shutil.move(latestfile, destfile)  # MOVE AND RENAME
-            to_text('Moved to: ' + destfile)  # END BACKUP LOCATION
+            main_window.update_textbox('Moved to: ' + destfile)  # END BACKUP LOCATION
     except:
-        to_text("Issue renaming/moving to " + str(dirpath))
-        to_text(newfilename + " is in Downloads folder")
+        main_window.update_textbox("Issue renaming/moving to " + str(dirpath))
+        main_window.update_textbox(newfilename + " is in Downloads folder")
 
 
 def convert_to_xlsx():
@@ -218,7 +258,7 @@ def check_if_downloaded(facility, report):
     file_name = report_path + '\\' + str(report_year) + ' ' + str(
         prev_month_num_str) + ' ' + facility + ' ' + report_name
     if not os.path.exists(file_name):
-        print(file_name + ' missing')
+        main_window.update_textbox(file_name + ' missing')
 
 
 def find_updated_driver():
@@ -232,15 +272,15 @@ def find_updated_driver():
             if file[0] == 'chromedriver':
                 file_list.append(file[1][:2])
         try:
-            to_text('Updating chromedriver to newer version')
+            main_window.update_textbox('Updating chromedriver to newer version')
             shutil.copyfile(folder + 'chromedriver ' + max(file_list) + '.exe',
                             os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + max(file_list) + '.exe')
-            to_text('chromedriver updated to version ' + max(file_list))
+            main_window.update_textbox('chromedriver updated to version ' + max(file_list))
         except:
-            to_text("Couldn't update chromedriver automatically")
+            main_window.update_textbox("Couldn't update chromedriver automatically")
         return max(file_list)
     else:
-        to_text('Could not find P:\\PACS\\Finance\\Automation\\Chromedrivers\\')
+        main_window.update_textbox('Could not find P:\\PACS\\Finance\\Automation\\Chromedrivers\\')
 
 
 def find_current_driver():
@@ -298,9 +338,9 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                         if report == 'Revenue Reconciliation':
                             PCC.revenuerec(facname)
                         check_if_downloaded(facname, report)
-        to_text('Reports downloaded')
+        main_window.update_textbox('Reports downloaded')
     else:
-        to_text('No reports selected.')
+        main_window.update_textbox('No reports selected.')
 
 
 class LoginPCC:
@@ -317,10 +357,10 @@ class LoginPCC:
                 "selectedDestinationId": "Save as PDF",
                 "version": 2
             }
-            prefs = {'printing.print_preview_sticky_settings.appState': json.dumps(settings),
+            prefs = {'main_window.update_textboxing.main_window.update_textbox_preview_sticky_settings.appState': json.dumps(settings),
                      "plugins.always_open_pdf_externally": True}
             chrome_options.add_experimental_option('prefs', prefs)
-            chrome_options.add_argument('--kiosk-printing')
+            chrome_options.add_argument('--kiosk-main_window.update_textboxing')
             chromedriver_autoinstaller.install()
             self.driver = webdriver.Chrome(options=chrome_options)
 
@@ -344,9 +384,9 @@ class LoginPCC:
                     passwordx.send_keys(u[1])
                     self.driver.find_element(By.ID, 'id-submit').click()
             except:
-                print("There is an issue with the chrome driver")
+                main_window.update_textbox("There is an issue with the chrome driver")
         except:
-            to_text('There was an issue initiating chromedriver')
+            main_window.update_textbox('There was an issue initiating chromedriver')
 
     def teardown_method(self):
         """Exit browser"""
@@ -382,16 +422,16 @@ class LoginPCC:
                         bu_pull = bu_pull[-5:].split("-")
                         bu_val = bu_pull[1]
                         if bu_val == bu:
-                            print(option)
+                            main_window.update_textbox(option)
                             building_list.find_element(By.PARTIAL_LINK_TEXT, option).click()
                             return True
                 except:
-                    to_text("Could not locate " + bu + " in PCC")
+                    main_window.update_textbox("Could not locate " + bu + " in PCC")
                     return False
             else:
                 return True
         except:
-            to_text("Could not find the building dropdown menu")
+            main_window.update_textbox("Could not find the building dropdown menu")
             return False
 
     def ap_aging(self, facname):
@@ -419,7 +459,7 @@ class LoginPCC:
                 wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AP Aging\\" +
                         str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                 app.quit()
-                to_text(facname + ' AP aging saved to shared drive')
+                main_window.update_textbox(facname + ' AP aging saved to shared drive')
             except:
                 pass
             self.driver.find_element(By.NAME, "ESOLmonth").click()
@@ -461,7 +501,7 @@ class LoginPCC:
                 wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AP Aging\\" +
                         str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                 app.quit()
-                to_text(facname + ' AP aging saved to shared drive')
+                main_window.update_textbox(facname + ' AP aging saved to shared drive')
             except:
                 try:
                     os.mkdir(userpath + '\\Desktop\\temp reporting\\')
@@ -471,12 +511,12 @@ class LoginPCC:
                     wb.save(userpath + '\\Desktop\\temp reporting\\' +
                             str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                     app.quit()
-                    to_text(facname + ' AP aging saved to desktop 2')
+                    main_window.update_textbox(facname + ' AP aging saved to desktop 2')
                 except:
-                    to_text('Error saving AP aging to desktop')
+                    main_window.update_textbox('Error saving AP aging to desktop')
                 time.sleep(1)
         except:
-            to_text('Issue downloading AP Aging: ' + facname)
+            main_window.update_textbox('Issue downloading AP Aging: ' + facname)
 
     def ar_aging(self, facname, bu):
         """Download AR aging reports (saves Excel file)"""
@@ -519,11 +559,11 @@ class LoginPCC:
                     renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + " AR Aging",
                                          "P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AR Aging\\")
                 except:
-                    to_text('Issue moving and renaming the file')
+                    main_window.update_textbox('Issue moving and renaming the file')
             except:
-                to_text('Issue converting excel file')
+                main_window.update_textbox('Issue converting excel file')
         except:
-            to_text('Issue downloading AR Aging: ' + facname)
+            main_window.update_textbox('Issue downloading AR Aging: ' + facname)
 
     def ar_rollforward(self, facname):
         """Download AR rollforward report (paste to Excel)"""
@@ -568,7 +608,7 @@ class LoginPCC:
                 wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AR Rollforward\\" +
                         str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
                 app.quit()
-                to_text(facname + ' AR Rollforward saved to shared drive')
+                main_window.update_textbox(facname + ' AR Rollforward saved to shared drive')
             except:
                 try:
                     os.mkdir(userpath + '\\Desktop\\temp reporting\\')
@@ -578,12 +618,12 @@ class LoginPCC:
                     wb.save(userpath + '\\Desktop\\temp reporting\\' +
                             str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
                     app.quit()
-                    to_text(facname + ' AR Rollforward saved to desktop 2')
+                    main_window.update_textbox(facname + ' AR Rollforward saved to desktop 2')
                 except:
-                    to_text('Error saving AR Rollforward to desktop')
+                    main_window.update_textbox('Error saving AR Rollforward to desktop')
                 time.sleep(2)
         except:
-            to_text('Issue downloading AR Rollforward: ' + facname)
+            main_window.update_textbox('Issue downloading AR Rollforward: ' + facname)
 
     def cash_receipts(self, facname):
         """Download cash receipts report (PDF)"""
@@ -614,7 +654,7 @@ class LoginPCC:
                     time.sleep(5)
             while True:
                 try:
-                    self.driver.execute_script('window.print();')  # print to PDF
+                    self.driver.execute_script('window.main_window.update_textbox();')  # main_window.update_textbox to PDF
                     break
                 except:
                     time.sleep(5)
@@ -623,7 +663,7 @@ class LoginPCC:
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Cash Receipts',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Cash Receipts\\')
         except:
-            to_text('Issue downloading Cash Receipts: ' + facname)
+            main_window.update_textbox('Issue downloading Cash Receipts: ' + facname)
 
     def census(self, facname):
         """Download census report (PDF)"""
@@ -656,7 +696,7 @@ class LoginPCC:
                     time.sleep(5)
             while True:
                 try:
-                    self.driver.execute_script('window.print();')  # print to PDF
+                    self.driver.execute_script('window.main_window.update_textbox();')  # main_window.update_textbox to PDF
                     break
                 except:
                     time.sleep(5)
@@ -665,7 +705,7 @@ class LoginPCC:
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Census',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Census\\')
         except:
-            to_text('Issue downloading Census: ' + facname)
+            main_window.update_textbox('Issue downloading Census: ' + facname)
 
     def journal_entries(self, facname):
         """Download journal entries report (PDF)"""
@@ -688,7 +728,7 @@ class LoginPCC:
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Journal Entries',
                                  'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Journal Entries\\')
         except:
-            to_text('Issue downloading Journal Entries: ' + facname)
+            main_window.update_textbox('Issue downloading Journal Entries: ' + facname)
 
     def revenuerec(self, facname):
         """Download revenue reconciliation report (PDF)"""
@@ -717,7 +757,7 @@ class LoginPCC:
                     time.sleep(5)
             while True:
                 try:
-                    self.driver.execute_script('window.print();')  # print to PDF
+                    self.driver.execute_script('window.main_window.update_textbox();')  # main_window.update_textbox to PDF
                     break
                 except:
                     time.sleep(5)
@@ -727,7 +767,7 @@ class LoginPCC:
                 str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Revenue Reconciliation',
                 'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Revenue Reconciliation\\')
         except:
-            to_text('Issue downloading Revenue Reconciliation: ' + facname)
+            main_window.update_textbox('Issue downloading Revenue Reconciliation: ' + facname)
 
 
 ######################
@@ -742,7 +782,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
 
-        self.setMinimumSize(QSize(380, 200))  # Set sizes
+        self.setMinimumSize(QSize(1000, 500))  # Set sizes
         self.setWindowTitle("PCC Reporting Program")  # Set a title
         self.central_widget = QWidget(self)  # Create a central widget
         self.setCentralWidget(self.central_widget)  # Set the central widget
@@ -764,7 +804,7 @@ class MainWindow(QMainWindow):
         self.child_win.show()
 
     def update_textbox(self, message):
-        self.status_box.append(f"{datetime.now().strftime('%I:%M:%S')}>>{message}")
+        self.status_box.append(f"{datetime.datetime.now().strftime('%I:%M:%S')}>>{message}")
         self.status_box.repaint()
         
     def closeEvent(self, event):
@@ -840,15 +880,18 @@ class RunReportsWin(QWidget):
         self.saverunbtn = QPushButton('Save and Run', self)
         self.btnlayout.addWidget(self.saverunbtn, 1, 1)
         self.saverunbtn.clicked.connect(self.checkCheckboxes)
+
         self.selectallbtn = QPushButton('Check All', self)
         self.btnlayout.addWidget(self.selectallbtn, 1, 2)
         self.selectallbtn.clicked.connect(self.selectCheckboxes)
+
         self.unselectallbtn = QPushButton('Uncheck All', self)
         self.btnlayout.addWidget(self.unselectallbtn, 1, 3)
-        self.unselectallbtn.clicked.connect(self.reportCounter)
-        self.unselectallbtn = QPushButton('Run All', self)
-        self.btnlayout.addWidget(self.unselectallbtn, 1, 4)
-        self.unselectallbtn.clicked.connect(self.reportCounter)
+        self.unselectallbtn.clicked.connect(self.unselectCheckboxes)
+
+        self.checkrptsbtn = QPushButton('Run All', self)
+        self.btnlayout.addWidget(self.checkrptsbtn, 1, 4)
+        self.checkrptsbtn.clicked.connect(self.reportCounter)
 
     def checkCheckboxes(self):
         fac_checked_list = []
@@ -885,38 +928,19 @@ class RunReportsWin(QWidget):
         year = self.datelayout.itemAt(3).widget()
         update_date(month.text(), year.text())
         self.close()
-        counter = 0
-        wb_ref = r"P:\PACS\Finance\Automation\PCC Reporting\pcc webscraping.xlsx"
-        wb = pd.read_excel(wb_ref, sheet_name='Automation', usecols=['Common Name', 'Business Unit'])
-        reports_path = [r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AP Aging',
-                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Aging',
-                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Rollforward',
-                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Cash Receipts',
-                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Census',
-                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Journal Entries',
-                        r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation']
-        report_names = ['AP Aging.xlsx', 'AR Aging.xlsx', 'AR Rollforward.xlsx', 'Cash Receipts.pdf',
-                        'Census.pdf', 'Journal Entries.pdf', 'Revenue Reconciliation.pdf']
-        print("Searching monthly reports")
-        i = 0
-        for path in reports_path:
-            for building in wb['Common Name']:
-                file_name = path + '\\' + str(report_year) + ' ' + str(prev_month_num_str) + ' ' + building + ' ' + \
-                            report_names[i]
-                if not os.path.exists(file_name):
-                    counter = counter + 1
-                    print(file_name + ' missing.  Downloading now')
-                    rpt = report_names[i].split('.')
-                    rpt = [rpt[0]]
-                    download_reports(building, rpt)
-                else:
-                    size = os.path.getsize(file_name)
-                    kb = size/(1024)
-                    if kb < 10:
-                        print(file_name + " might be empty.  Please check.")
-            i += 1
-        if counter == 0:
-            print("Reports have all been downloaded")
+        check_reports()
+        # t1 = Thread(target=check_reports)
+        # t1.start()
+        # while True:
+        #     if not q.empty():
+        #         data = q.get()
+        #         main_window.update_textbox(data)
+        #         if event.is_set():
+        #             break
+        #     else:
+        #         time.sleep(0.01)
+        # t1.join()
+        # main_window.update_textbox("Finished")
 
 
 if __name__ == "__main__":
