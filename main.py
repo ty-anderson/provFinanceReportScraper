@@ -141,7 +141,6 @@ def check_reports():
                     r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation']
     report_names = ['AP Aging.xlsx', 'AR Aging.xlsx', 'AR Rollforward.xlsx', 'Cash Receipts.pdf',
                     'Census.pdf', 'Journal Entries.pdf', 'Revenue Reconciliation.pdf']
-    # q.put("Searching monthly reports")
     print("Searching monthly reports")
     i = 0
     for path in reports_path:
@@ -150,7 +149,6 @@ def check_reports():
                         report_names[i]
             if not os.path.exists(file_name):
                 counter = counter + 1
-                # q.put(file_name + ' missing.  Downloading now')
                 print(file_name + ' missing.  Downloading now')
                 rpt = report_names[i].split('.')
                 rpt = [rpt[0]]
@@ -159,14 +157,9 @@ def check_reports():
                 size = os.path.getsize(file_name)
                 kb = size / 1024
                 if kb < 10:
-                    # q.put(file_name + " might be empty.  Please check.")
                     print(file_name + " might be empty.  Please check.")
-            # q.put(f"Completed {building} {file_name}")
-            # print(f"Completed {building} {file_name}")
         i += 1
     if counter == 0:
-        # q.put("Reports have all been downloaded")
-        # event.set()
         print("Reports have all been downloaded")
 
 
@@ -300,6 +293,29 @@ def startPCC():
     """Start new instance of class PCC"""
     global PCC
     PCC = LoginPCC()
+
+
+def open_gl_periods(facilitylist=facilityindex):
+    """Download month end close reports"""
+    global PCC
+    deleteDownloads()
+    if not facilitylist:
+        facilitylist = facilityindex
+    try:
+        PCC  # check if an instance already exists
+    except:  # if not
+        startPCC()  # create one
+    for facname in facilities:  # LOOP BUILDING LIST
+        if facname in facilitylist:  # IS BUILDING CHECHED
+            bu = str(facilities[facname][1])  # GET BU
+            if len(bu) < 2:
+                bu = str(0) + bu
+            if PCC.buildingSelect(bu):
+                time.sleep(1)
+                PCC.open_periods(facname)
+        print('Periods open')
+    else:
+        print('No reports selected.')
 
 
 def download_reports(facilitylist=facilityindex, reportlist=reports_list):
@@ -769,6 +785,46 @@ class LoginPCC:
         except:
             print('Issue downloading Revenue Reconciliation: ' + facname)
 
+    def open_periods(self, facname):
+        """Open the fiscal period in PCC"""
+        try:
+            window_before = self.driver.window_handles[0]  # make window tab object
+            time.sleep(1)
+            self.driver.get("https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp")
+            time.sleep(1)
+            rows = self.driver.find_elements(By.CSS_SELECTOR, "tr tr")
+            time.sleep(5)  # wait
+            for row in rows:
+                if "edit" in row.text:
+                    print(row.text)
+                if str(report_year) in row.text:
+                    print("THIS ONE IS THE ONE")
+                    cells = row.find_elements(By.CSS_SELECTOR, "a")
+                    for cell in cells:
+                        print(cell.text)
+                        if "edit" in cell.text:
+                            cell.click()
+                            break
+                    break
+            window_after = self.driver.window_handles[1]  # set second tab
+            self.driver.switch_to.window(window_after)  # select the second tab
+            time.sleep(5)
+            rows2 = self.driver.find_elements(By.CSS_SELECTOR, "tr")
+            for row2 in rows2:
+                if f"{prev_month_num}/1/{report_year}" in row2.text and "Open" in row2.text:
+                    cells2 = row2.find_elements(By.CSS_SELECTOR, "td")
+                    for cell2 in cells2:
+                        if "Open" in cell2.text:
+                            open_close = cell2.find_elements(By.CSS_SELECTOR, "a")
+                            for oc in open_close:
+                                if "Open" in oc.text:
+                                    oc.click()
+                                    break
+
+            self.close_all_windows(window_before)
+        except:
+            print('Issue downloading Revenue Reconciliation: ' + facname)
+
 
 ######################
 #### GUI SECTION #####
@@ -893,6 +949,10 @@ class RunReportsWin(QWidget):
         self.btnlayout.addWidget(self.checkrptsbtn, 1, 4)
         self.checkrptsbtn.clicked.connect(self.reportCounter)
 
+        self.openperiods = QPushButton('Open Periods', self)
+        self.btnlayout.addWidget(self.openperiods, 1, 5)
+        self.openperiods.clicked.connect(self.open_gl)
+
     def checkCheckboxes(self):
         fac_checked_list = []
         rpt_checked_list = []
@@ -929,18 +989,13 @@ class RunReportsWin(QWidget):
         update_date(month.text(), year.text())
         self.close()
         check_reports()
-        # t1 = Thread(target=check_reports)
-        # t1.start()
-        # while True:
-        #     if not q.empty():
-        #         data = q.get()
-        #         print(data)
-        #         if event.is_set():
-        #             break
-        #     else:
-        #         time.sleep(0.01)
-        # t1.join()
-        # print("Finished")
+
+    def open_gl(self):
+        month = self.datelayout.itemAt(1).widget()
+        year = self.datelayout.itemAt(3).widget()
+        update_date(month.text(), year.text())
+        self.close()
+        open_gl_periods()
 
 
 if __name__ == "__main__":
