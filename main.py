@@ -75,7 +75,6 @@ if prev_month_num != 12:
 
 """Get paths to map out how data flows if not connected to the VPN"""
 try:
-    # faclistpath = 'P:\\PACS\\Finance\\General Info\\Finance Misc\\Facility List.xlsx'
     faclistpath = "P:\\PACS\\Finance\\Automation\\PCC Reporting\\pcc webscraping.xlsx"
     try:
         os.mkdir(userpath + '\\Documents\\PCC HUB\\')  # make directory for backup in documents folder
@@ -292,19 +291,18 @@ def find_current_driver():
 def startPCC():
     """Start new instance of class PCC"""
     global PCC
-    PCC = LoginPCC()
-
-
-def open_gl_periods(facilitylist=facilityindex):
-    """Download month end close reports"""
-    global PCC
-    deleteDownloads()
-    if not facilitylist:
-        facilitylist = facilityindex
     try:
         PCC  # check if an instance already exists
     except:  # if not
-        startPCC()  # create one
+        PCC = LoginPCC()
+
+
+def gl_periods(facilitylist=facilityindex):
+    """Download month end close reports"""
+    global PCC
+    startPCC()
+    if not facilitylist:
+        facilitylist = facilityindex
     for facname in facilities:  # LOOP BUILDING LIST
         if facname in facilitylist:  # IS BUILDING CHECHED
             bu = str(facilities[facname][1])  # GET BU
@@ -323,10 +321,7 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
     if not facilitylist:
         facilitylist = facilityindex
     if reportlist:
-        try:
-            PCC  # check if an instance already exists
-        except:  # if not
-            startPCC()  # create one
+        startPCC()
         for facname in facilities:  # LOOP BUILDING LIST
             if facname in facilitylist:  # IS BUILDING CHECHED
                 bu = str(facilities[facname][1])  # GET BU
@@ -993,7 +988,7 @@ class RunReportsWin(QWidget):
         year = self.datelayout.itemAt(3).widget()
         update_date(month.text(), year.text())
         self.close()
-        open_gl_periods()
+        gl_periods()
 
 
 if __name__ == "__main__":
