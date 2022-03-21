@@ -308,14 +308,12 @@ def open_gl_periods(facilitylist=facilityindex):
     for facname in facilities:  # LOOP BUILDING LIST
         if facname in facilitylist:  # IS BUILDING CHECHED
             bu = str(facilities[facname][1])  # GET BU
-            if len(bu) < 2:
-                bu = str(0) + bu
+            bu if len(bu) <= 2 else (str(0) + bu)
             if PCC.buildingSelect(bu):
                 time.sleep(1)
-                PCC.open_periods(facname)
-        print('Periods open')
-    else:
-        print('No reports selected.')
+                period_status = PCC.change_fiscal_period(facname, "Open")  # should be Open or Close
+                print(period_status)
+    print('Periods open')
 
 
 def download_reports(facilitylist=facilityindex, reportlist=reports_list):
@@ -785,7 +783,7 @@ class LoginPCC:
         except:
             print('Issue downloading Revenue Reconciliation: ' + facname)
 
-    def open_periods(self, facname):
+    def change_fiscal_period(self, facname, period_oc):
         """Open the fiscal period in PCC"""
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
@@ -795,13 +793,9 @@ class LoginPCC:
             rows = self.driver.find_elements(By.CSS_SELECTOR, "tr tr")
             time.sleep(5)  # wait
             for row in rows:
-                if "edit" in row.text:
-                    print(row.text)
                 if str(report_year) in row.text:
-                    print("THIS ONE IS THE ONE")
                     cells = row.find_elements(By.CSS_SELECTOR, "a")
                     for cell in cells:
-                        print(cell.text)
                         if "edit" in cell.text:
                             cell.click()
                             break
@@ -817,14 +811,18 @@ class LoginPCC:
                         if "Open" in cell2.text:
                             open_close = cell2.find_elements(By.CSS_SELECTOR, "a")
                             for oc in open_close:
-                                if "Open" in oc.text:
+                                if period_oc in oc.text:
                                     oc.click()
-                                    break
-
-            self.close_all_windows(window_before)
+                                    buttons = self.driver.find_elements(By.CLASS_NAME, "pccButton")
+                                    for button in buttons:
+                                        button_val = button.get_attribute("value")
+                                        if button_val == "Save":
+                                            button.click()
+                                            self.close_all_windows(window_before)
+                                            return f"{facname} is open"
         except:
-            print('Issue downloading Revenue Reconciliation: ' + facname)
-
+            self.close_all_windows(window_before)
+            return f"{facname} could not be opened.  Error processing"
 
 ######################
 #### GUI SECTION #####
