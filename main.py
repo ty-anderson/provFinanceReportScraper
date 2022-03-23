@@ -244,8 +244,8 @@ def check_if_downloaded(facility, report):
         report_name = "Revenue Reconciliation.pdf"
         report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation'
     else:
-        # report_name = "Issue identifying report"
-        # report_path = "Issue identifying report"
+        report_name = "Issue identifying report"
+        report_path = "Issue identifying report"
         pass
     file_name = report_path + '\\' + str(report_year) + ' ' + str(
         prev_month_num_str) + ' ' + facility + ' ' + report_name
@@ -330,21 +330,21 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                 if PCC.buildingSelect(bu):
                     time.sleep(1)
                     for report in reportlist:
-                        if report == 'AP Aging':
+                        if 'AP Aging' in report:
                             PCC.ap_aging(facname)
-                        if report == 'AR Aging':            # USES MGMT CONSOLE
+                        if 'AR Aging' in report:            # USES MGMT CONSOLE
                             bu = facilities[facname][1]     # TO SELECT BUILDING IN AR REPORT
                             PCC.ar_aging(facname, bu)
                             PCC.buildingSelect(str(bu))
-                        if report == 'AR Rollforward':
+                        if 'Rollforward' in report:
                             PCC.ar_rollforward(facname)
-                        if report == 'Cash Receipts':
+                        if 'Receipts' in report:
                             PCC.cash_receipts(facname)
-                        if report == 'Census':
+                        if "Census" in report:
                             PCC.census(facname)
-                        if report == 'Journal Entries':
+                        if 'Journal Entries' in report:
                             PCC.journal_entries(facname)
-                        if report == 'Revenue Reconciliation':
+                        if 'Revenue Reconciliation' in report:
                             PCC.revenuerec(facname)
                         check_if_downloaded(facname, report)
         print('Reports downloaded')
