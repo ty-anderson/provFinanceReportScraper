@@ -198,12 +198,12 @@ def renameDownloadedFile(newfilename, dirpath=''):
 def convert_to_xlsx():
     """Opens non-xlsx file and saves as xlsx"""
     listoffiles = glob.glob(userpath + '\\Downloads\\*')  # get a list of files
-    latestfile = max(listoffiles, key=os.path.getctime)  # find the latest file
-    excel = win32com.client.dynamic.Dispatch("Excel.Application")
-    wb = excel.Workbooks.Open(latestfile)
-    wb.SaveAs(latestfile + "x", FileFormat=51)
-    wb.Close()
-    excel.Application.Quit()
+    latest_file = max(listoffiles, key=os.path.getctime)  # find the latest file
+    wb = xw.Book(latest_file)
+    wb.save(latest_file + "x")
+    wb.close()
+    for xl in xw.apps:
+        xl.quit()
 
 
 def check_if_downloaded(facility, report):
