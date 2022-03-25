@@ -73,26 +73,14 @@ prev_month_word = calendar.month_name[prev_month_num]
 if prev_month_num != 12:
     report_year = today.year
 
-"""Get paths to map out how data flows if not connected to the VPN"""
-try:
-    faclistpath = "P:\\PACS\\Finance\\Automation\\PCC Reporting\\pcc webscraping.xlsx"
-    try:
-        os.mkdir(userpath + '\\Documents\\PCC HUB\\')  # make directory for backup in documents folder
-        shutil.copyfile(faclistpath, userpath + '\\Documents\\PCC HUB\\pcc webscraping.xlsx')  # make backup file
-    except FileExistsError:
-        shutil.copyfile(faclistpath,
-                        userpath + '\\Documents\\PCC HUB\\pcc webscraping.xlsx')  # if folder exists just copy
-except FileNotFoundError:  # if VPN is not connected use the one last saved
-    faclistpath = userpath + '\\Documents\\PCC HUB\\pcc webscraping.xlsx'
-
+faclistpath = "P:\\PACS\\Finance\\Automation\\PCC Reporting\\pcc webscraping.xlsx"
 facility_df = pd.read_excel(faclistpath, sheet_name='Automation', index_col=0)
 
 """Create All lists and dictionaries"""
 facilityindex = facility_df.index.to_list()
-accountants = facility_df['Accountant'].to_list()
 fac_number = facility_df['Business Unit'].to_list()
 pcc_name = facility_df['PCC Name'].to_list()
-facilities = dict(zip(facilityindex, zip(accountants, fac_number, pcc_name)))
+facilities = dict(zip(facilityindex, zip(fac_number, pcc_name)))
 reports_list = ['AP Aging',
                 'AR Aging',
                 'AR Rollforward',
@@ -109,7 +97,6 @@ def update_date(monthinput='', yearinput=''):
     global prev_month_num
     global prev_month_abbr
     global report_year
-    # collect date info
     try:
         prev_month_num = int(monthinput)
     except ValueError:
@@ -212,7 +199,6 @@ def convert_to_xlsx():
     """Opens non-xlsx file and saves as xlsx"""
     listoffiles = glob.glob(userpath + '\\Downloads\\*')  # get a list of files
     latestfile = max(listoffiles, key=os.path.getctime)  # find the latest file
-    extention = os.path.splitext(latestfile)[1]  # get the extension of the latest file
     excel = win32com.client.dynamic.Dispatch("Excel.Application")
     wb = excel.Workbooks.Open(latestfile)
     wb.SaveAs(latestfile + "x", FileFormat=51)
@@ -253,41 +239,6 @@ def check_if_downloaded(facility, report):
         print(file_name + ' missing')
 
 
-def find_updated_driver():
-    """Pulls latest driver from shared drive and addes to user's documents folder"""
-    folder = 'P:\\PACS\\Finance\\Automation\\Chromedrivers\\'
-    file_list = []
-    if os.path.isdir(folder):
-        list_items = os.listdir(folder)
-        for item in list_items:
-            file = item.split(" ")
-            if file[0] == 'chromedriver':
-                file_list.append(file[1][:2])
-        try:
-            print('Updating chromedriver to newer version')
-            shutil.copyfile(folder + 'chromedriver ' + max(file_list) + '.exe',
-                            os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\chromedriver ' + max(file_list) + '.exe')
-            print('chromedriver updated to version ' + max(file_list))
-        except:
-            print("Couldn't update chromedriver automatically")
-        return max(file_list)
-    else:
-        print('Could not find P:\\PACS\\Finance\\Automation\\Chromedrivers\\')
-
-
-def find_current_driver():
-    """Uses driver that is stored on your computer"""
-    folder = os.environ['USERPROFILE'] + '\\Documents\\PCC HUB\\'
-    file_list = []
-    if os.path.isdir(folder):
-        list_items = os.listdir(folder)
-        for item in list_items:
-            file = item.split(" ")
-            if file[0] == 'chromedriver':
-                file_list.append(file[1][:2])
-        return max(file_list)
-
-
 def startPCC():
     """Start new instance of class PCC"""
     global PCC
@@ -305,9 +256,9 @@ def gl_periods(facilitylist=facilityindex):
         facilitylist = facilityindex
     for facname in facilities:  # LOOP BUILDING LIST
         if facname in facilitylist:  # IS BUILDING CHECHED
-            bu = str(facilities[facname][1])  # GET BU
+            bu = str(facilities[facname][0])  # GET BU
             bu if len(bu) <= 2 else (str(0) + bu)
-            if PCC.buildingSelect(bu):
+            if PCC.building_select(bu):
                 time.sleep(1)
                 period_status = PCC.change_fiscal_period(facname, "Open")  # should be Open or Close
                 print(period_status)
@@ -324,18 +275,18 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
         startPCC()
         for facname in facilities:  # LOOP BUILDING LIST
             if facname in facilitylist:  # IS BUILDING CHECHED
-                bu = str(facilities[facname][1])  # GET BU
+                bu = str(facilities[facname][0])  # GET BU
                 if len(bu) < 2:
                     bu = str(0) + bu
-                if PCC.buildingSelect(bu):
+                if PCC.building_select(bu):
                     time.sleep(1)
                     for report in reportlist:
                         if 'AP Aging' in report:
                             PCC.ap_aging(facname)
                         if 'AR Aging' in report:            # USES MGMT CONSOLE
-                            bu = facilities[facname][1]     # TO SELECT BUILDING IN AR REPORT
+                            bu = facilities[facname][0]     # TO SELECT BUILDING IN AR REPORT
                             PCC.ar_aging(facname, bu)
-                            PCC.buildingSelect(str(bu))
+                            PCC.building_select(str(bu))
                         if 'Rollforward' in report:
                             PCC.ar_rollforward(facname)
                         if 'Receipts' in report:
@@ -376,22 +327,17 @@ class LoginPCC:
             try:
                 self.driver.get('https://login.pointclickcare.com/home/userLogin.xhtml')
                 time.sleep(3)
-                f = open("info.txt", "r")
-                u = f.readline().split(',')
-                f.close()
+                with open("info.txt", "r") as f:
+                    u = f.readline().split(',')
                 try:
-                    username = self.driver.find_element(By.ID, 'username')
-                    username.send_keys(u[0])
-                    password = self.driver.find_element(By.ID, 'password')
-                    password.send_keys(u[1])
+                    self.driver.find_element(By.ID, 'username').send_keys(u[0])
+                    self.driver.find_element(By.ID, 'password').send_keys(u[1])
                     self.driver.find_element(By.ID, 'login-button').click()
-                    time.sleep(3)
                 except:
-                    usernamex = self.driver.find_element(By.ID, 'id-un')
-                    usernamex.send_keys(u[0])
-                    passwordx = self.driver.find_element(By.ID, 'password')
-                    passwordx.send_keys(u[1])
+                    self.driver.find_element(By.ID, 'id-un').send_keys(u[0])
+                    self.driver.find_element(By.ID, 'password').send_keys(u[1])
                     self.driver.find_element(By.ID, 'id-submit').click()
+                time.sleep(3)
             except:
                 print("There is an issue with the chrome driver")
         except:
@@ -411,15 +357,12 @@ class LoginPCC:
                 self.driver.close()
         self.driver.switch_to.window(firstwindow)
 
-    def buildingSelect(self, bu):
+    def building_select(self, bu):
         """Select the building using business unit"""
         try:
-            time.sleep(5)
-            self.driver.find_element(By.XPATH, '//button[normalize-space()="close"]').click()
-        except:
-            pass
-        try:
             current_fac = self.driver.find_element(By.NAME, "current_fac_id").get_attribute("value")
+            if str(current_fac) == bu:
+                return True
             if str(current_fac) != bu:
                 try:
                     self.driver.find_element(By.ID, "pccFacLink").click()
@@ -427,9 +370,7 @@ class LoginPCC:
                     building_list = self.driver.find_element(By.ID, "optionList")
                     options_split = building_list.text.splitlines()
                     for option in options_split:
-                        bu_pull = option.replace(" ", "")
-                        bu_pull = bu_pull[-5:].split("-")
-                        bu_val = bu_pull[1]
+                        bu_val = option.replace(" ", "").split("-")[1]
                         if bu_val == bu:
                             print(option)
                             building_list.find_element(By.PARTIAL_LINK_TEXT, option).click()
@@ -437,8 +378,6 @@ class LoginPCC:
                 except:
                     print("Could not locate " + bu + " in PCC")
                     return False
-            else:
-                return True
         except:
             print("Could not find the building dropdown menu")
             return False
@@ -543,7 +482,7 @@ class LoginPCC:
                 self.driver.find_element(By.CSS_SELECTOR, "#facTabs .pccButton").click()  # go to management console
                 time.sleep(1)
             self.driver.get("https://www30.pointclickcare.com/emc/admin/reports/rp_araging_us.jsp")  # go to reports
-            self.driver.find_element(By.LINK_TEXT, "select").click()  # click facilities
+            self.driver.find_element(By.LINK_TEXT, "select").click()
             window_after = self.driver.window_handles[1]  # set second tab
             self.driver.switch_to.window(window_after)  # select the second tab
             self.driver.find_element(By.CSS_SELECTOR, "#footer > input:nth-child(2)").click()  # clear all
