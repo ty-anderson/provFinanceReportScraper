@@ -248,20 +248,20 @@ def startPCC():
         PCC = LoginPCC()
 
 
-def gl_periods(facilitylist=facilityindex):
+def gl_periods(facilitylist=facilities):
     """Download month end close reports"""
     global PCC
     startPCC()
-    if not facilitylist:
-        facilitylist = facilityindex
-    for facname in facilities:  # LOOP BUILDING LIST
-        if facname in facilitylist:  # IS BUILDING CHECHED
-            bu = str(facilities[facname][0])  # GET BU
+    start_point = 54
+    for i, fac in enumerate(facilitylist):  # LOOP BUILDING LIST
+        start_point -= 1
+        if start_point <= -1:
+            bu = str(facilitylist.get(fac)[0])  # GET BU
             bu if len(bu) <= 2 else (str(0) + bu)
             if PCC.building_select(bu):
                 time.sleep(1)
-                period_status = PCC.change_fiscal_period(facname, "Open")  # should be Open or Close
-                print(period_status)
+                period_status = PCC.change_fiscal_period(fac[1], "Closed")  # should be Open or Close
+                print(f"{i} is {period_status}")
     print('Periods open')
 
 
@@ -370,7 +370,8 @@ class LoginPCC:
                     building_list = self.driver.find_element(By.ID, "optionList")
                     options_split = building_list.text.splitlines()
                     for option in options_split:
-                        bu_val = option.replace(" ", "").split("-")[1]
+                        bu_val = option.replace(" ", "").split("-")
+                        bu_val = bu_val[len(bu_val)-1]
                         if bu_val == bu:
                             print(option)
                             building_list.find_element(By.PARTIAL_LINK_TEXT, option).click()
@@ -739,7 +740,8 @@ class LoginPCC:
             time.sleep(5)
             rows2 = self.driver.find_elements(By.CSS_SELECTOR, "tr")
             for row2 in rows2:
-                if f"{prev_month_num}/1/{report_year}" in row2.text and "Open" in row2.text:
+                # if f"{prev_month_num}/1/{report_year}" in row2.text and "Open" in row2.text:
+                if f"2021" in row2.text and "Open" in row2.text:
                     cells2 = row2.find_elements(By.CSS_SELECTOR, "td")
                     for cell2 in cells2:
                         if "Open" in cell2.text:
@@ -747,13 +749,14 @@ class LoginPCC:
                             for oc in open_close:
                                 if period_oc in oc.text:
                                     oc.click()
-                                    buttons = self.driver.find_elements(By.CLASS_NAME, "pccButton")
-                                    for button in buttons:
-                                        button_val = button.get_attribute("value")
-                                        if button_val == "Save":
-                                            button.click()
-                                            self.close_all_windows(window_before)
-                                            return f"{facname} is open"
+            buttons = self.driver.find_elements(By.CLASS_NAME, "pccButton")
+            for button in buttons:
+                button_val = button.get_attribute("value")
+                if button_val == "Save":
+                    button.click()
+                    self.close_all_windows(window_before)
+                    time.sleep(4)
+                    return f"{facname} is open"
         except:
             self.close_all_windows(window_before)
             return f"{facname} could not be opened.  Error processing"
