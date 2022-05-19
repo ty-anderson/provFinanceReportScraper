@@ -252,7 +252,7 @@ def gl_periods(facilitylist=facilities):
     """Download month end close reports"""
     global PCC
     startPCC()
-    start_point = 54
+    start_point = 1
     for i, fac in enumerate(facilitylist):  # LOOP BUILDING LIST
         start_point -= 1
         if start_point <= -1:
@@ -741,7 +741,9 @@ class LoginPCC:
             rows2 = self.driver.find_elements(By.CSS_SELECTOR, "tr")
             for row2 in rows2:
                 # if f"{prev_month_num}/1/{report_year}" in row2.text and "Open" in row2.text:
-                if f"2021" in row2.text and "Open" in row2.text:
+                list_of_dates = ['1/1/2022', '2/1/2022', '3/1/2022']
+                if any(x in row2.text for x in list_of_dates) and "Open" in row2.text:
+                # if f"1/1/2022" in row2.text and "Open" in row2.text:
                     cells2 = row2.find_elements(By.CSS_SELECTOR, "td")
                     for cell2 in cells2:
                         if "Open" in cell2.text:
