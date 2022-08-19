@@ -283,8 +283,8 @@ def download_reports(facilitylist=facilityindex, reportlist=reports_list):
                     for report in reportlist:
                         if 'AP Aging' in report:
                             PCC.ap_aging(facname)
-                        if 'AR Aging' in report:            # USES MGMT CONSOLE
-                            bu = facilities[facname][0]     # TO SELECT BUILDING IN AR REPORT
+                        if 'AR Aging' in report:  # USES MGMT CONSOLE
+                            bu = facilities[facname][0]  # TO SELECT BUILDING IN AR REPORT
                             PCC.ar_aging(facname, bu)
                             PCC.building_select(str(bu))
                         if 'Rollforward' in report:
@@ -331,6 +331,7 @@ class LoginPCC:
                     u = f.readline().split(',')
                 try:
                     self.driver.find_element(By.ID, 'username').send_keys(u[0])
+                    time.sleep(4)
                     self.driver.find_element(By.ID, 'password').send_keys(u[1])
                     self.driver.find_element(By.ID, 'login-button').click()
                 except:
@@ -359,6 +360,7 @@ class LoginPCC:
 
     def building_select(self, bu):
         """Select the building using business unit"""
+        time.sleep(4)
         try:
             current_fac = self.driver.find_element(By.NAME, "current_fac_id").get_attribute("value")
             if str(current_fac) == bu:
@@ -371,7 +373,7 @@ class LoginPCC:
                     options_split = building_list.text.splitlines()
                     for option in options_split:
                         bu_val = option.replace(" ", "").split("-")
-                        bu_val = bu_val[len(bu_val)-1]
+                        bu_val = bu_val[len(bu_val) - 1]
                         if bu_val == bu:
                             print(option)
                             building_list.find_element(By.PARTIAL_LINK_TEXT, option).click()
@@ -513,6 +515,7 @@ class LoginPCC:
                 print('Issue converting excel file')
         except:
             print('Issue downloading AR Aging: ' + facname)
+
 
     def ar_rollforward(self, facname):
         """Download AR rollforward report (paste to Excel)"""
@@ -723,7 +726,8 @@ class LoginPCC:
         try:
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
-            self.driver.get("https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp")
+            self.driver.get(
+                "https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp")
             time.sleep(1)
             rows = self.driver.find_elements(By.CSS_SELECTOR, "tr tr")
             time.sleep(5)  # wait
@@ -743,7 +747,7 @@ class LoginPCC:
                 # if f"{prev_month_num}/1/{report_year}" in row2.text and "Open" in row2.text:
                 list_of_dates = ['1/1/2022', '2/1/2022', '3/1/2022']
                 if any(x in row2.text for x in list_of_dates) and "Open" in row2.text:
-                # if f"1/1/2022" in row2.text and "Open" in row2.text:
+                    # if f"1/1/2022" in row2.text and "Open" in row2.text:
                     cells2 = row2.find_elements(By.CSS_SELECTOR, "td")
                     for cell2 in cells2:
                         if "Open" in cell2.text:
@@ -762,6 +766,7 @@ class LoginPCC:
         except:
             self.close_all_windows(window_before)
             return f"{facname} could not be opened.  Error processing"
+
 
 ######################
 #### GUI SECTION #####
@@ -799,7 +804,7 @@ class MainWindow(QMainWindow):
     def update_textbox(self, message):
         self.status_box.append(f"{datetime.datetime.now().strftime('%I:%M:%S')}>>{message}")
         self.status_box.repaint()
-        
+
     def closeEvent(self, event):
         """
         By overriding closeEvent, we can ignore the event and instead
