@@ -330,10 +330,13 @@ class LoginPCC:
                 with open("info.txt", "r") as f:
                     u = f.readline().split(',')
                 try:
-                    self.driver.find_element(By.ID, 'username').send_keys(u[0])
-                    time.sleep(4)
-                    self.driver.find_element(By.ID, 'password').send_keys(u[1])
-                    self.driver.find_element(By.ID, 'login-button').click()
+                    usernamex = self.driver.find_element(By.ID, 'username')
+                    usernamex.send_keys(u[0])
+                    self.driver.find_element(By.ID, 'id-next').click()
+                    time.sleep(1)
+                    passwordx = self.driver.find_element(By.ID, 'password')
+                    passwordx.send_keys(u[1])
+                    self.driver.find_element(By.ID, 'id-submit').click()
                 except:
                     self.driver.find_element(By.ID, 'id-un').send_keys(u[0])
                     self.driver.find_element(By.ID, 'password').send_keys(u[1])
@@ -744,10 +747,8 @@ class LoginPCC:
             time.sleep(5)
             rows2 = self.driver.find_elements(By.CSS_SELECTOR, "tr")
             for row2 in rows2:
-                # if f"{prev_month_num}/1/{report_year}" in row2.text and "Open" in row2.text:
                 list_of_dates = ['1/1/2022', '2/1/2022', '3/1/2022']
                 if any(x in row2.text for x in list_of_dates) and "Open" in row2.text:
-                    # if f"1/1/2022" in row2.text and "Open" in row2.text:
                     cells2 = row2.find_elements(By.CSS_SELECTOR, "td")
                     for cell2 in cells2:
                         if "Open" in cell2.text:
