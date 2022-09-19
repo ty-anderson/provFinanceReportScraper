@@ -252,7 +252,7 @@ def gl_periods(facilitylist=facilities):
     """Download month end close reports"""
     global PCC
     startPCC()
-    start_point = 1
+    start_point = 15
     for i, fac in enumerate(facilitylist):  # LOOP BUILDING LIST
         start_point -= 1
         if start_point <= -1:
@@ -260,7 +260,7 @@ def gl_periods(facilitylist=facilities):
             bu if len(bu) <= 2 else (str(0) + bu)
             if PCC.building_select(bu):
                 time.sleep(1)
-                period_status = PCC.change_fiscal_period(fac[1], "Closed")  # should be Open or Close
+                period_status = PCC.change_fiscal_period(fac, "Open")  # should be Open or Close
                 print(f"{i} is {period_status}")
     print('Periods open')
 
@@ -727,46 +727,54 @@ class LoginPCC:
     def change_fiscal_period(self, facname, period_oc):
         """Open the fiscal period in PCC"""
         try:
+            years = ['2020', '2021', '2022']
+            list_of_dates = ['12/1/2020', '2/1/2021', '12/1/2021', '2/1/2022']
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
             self.driver.get(
                 "https://www30.pointclickcare.com/glap/setup/fiscalyearslist.jsp?ESOLrefer=https://www30.pointclickcare.com/glap/setup/glapsetup.jsp")
-            time.sleep(1)
-            rows = self.driver.find_elements(By.CSS_SELECTOR, "tr tr")
-            time.sleep(5)  # wait
-            for row in rows:
-                if str(report_year) in row.text:
-                    cells = row.find_elements(By.CSS_SELECTOR, "a")
-                    for cell in cells:
-                        if "edit" in cell.text:
-                            cell.click()
-                            break
-                    break
-            window_after = self.driver.window_handles[1]  # set second tab
-            self.driver.switch_to.window(window_after)  # select the second tab
-            time.sleep(5)
-            rows2 = self.driver.find_elements(By.CSS_SELECTOR, "tr")
-            for row2 in rows2:
-                list_of_dates = ['1/1/2022', '2/1/2022', '3/1/2022']
-                if any(x in row2.text for x in list_of_dates) and "Open" in row2.text:
-                    cells2 = row2.find_elements(By.CSS_SELECTOR, "td")
-                    for cell2 in cells2:
-                        if "Open" in cell2.text:
-                            open_close = cell2.find_elements(By.CSS_SELECTOR, "a")
-                            for oc in open_close:
-                                if period_oc in oc.text:
-                                    oc.click()
-            buttons = self.driver.find_elements(By.CLASS_NAME, "pccButton")
-            for button in buttons:
-                button_val = button.get_attribute("value")
-                if button_val == "Save":
-                    button.click()
-                    self.close_all_windows(window_before)
-                    time.sleep(4)
-                    return f"{facname} is open"
-        except:
+            time.sleep(2)
+            for year in years:
+                time.sleep(1)
+                rows = self.driver.find_elements(By.CSS_SELECTOR, "tr tr")
+                time.sleep(1)
+                for row in rows:
+                    if year in row.text:
+                        print(f'Modify year: {year}')
+                        cells = row.find_elements(By.CSS_SELECTOR, "a")
+                        for cell in cells:
+                            if "edit" in cell.text:
+                                cell.click()
+                                window_after = self.driver.window_handles[1]  # set second tab
+                                time.sleep(3)
+                                self.driver.switch_to.window(window_after)  # select the second tab
+                                time.sleep(1)
+                                rows2 = self.driver.find_elements(By.CSS_SELECTOR, "tr")
+                                for row2 in rows2:
+                                    if any(x in row2.text for x in list_of_dates) and "Open" in row2.text:
+                                        cells2 = row2.find_elements(By.CSS_SELECTOR, "td")
+                                        for cell2 in cells2:
+                                            if "Open" in cell2.text:
+                                                open_close = cell2.find_elements(By.CSS_SELECTOR, "a")
+                                                for oc in open_close:
+                                                    if period_oc in oc.text:
+                                                        oc.click()
+                                buttons = self.driver.find_elements(By.CLASS_NAME, "pccButton")
+                                for button in buttons:
+                                    button_val = button.get_attribute("value")
+                                    if button_val == "Save":
+                                        button.click()
+                                        time.sleep(1)
+                                        self.close_all_windows(window_before)
+                                        time.sleep(2)
+                                        print(f'Period modified {year}')
+                                        break
+                                break
+                        break
+            return f"{facname} is {period_oc}"
+        except Exception as e:
             self.close_all_windows(window_before)
-            return f"{facname} could not be opened.  Error processing"
+            return f"{facname} could not be opened.  Error {e}"
 
 
 ######################
