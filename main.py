@@ -73,7 +73,7 @@ prev_month_word = calendar.month_name[prev_month_num]
 if prev_month_num != 12:
     report_year = today.year
 
-faclistpath = "P:\\PACS\\Finance\\Automation\\PCC Reporting\\pcc webscraping.xlsx"
+faclistpath = fr"P:\PACS\Finance\Automation\PCC Reporting\pcc webscraping.xlsx"
 facility_df = pd.read_excel(faclistpath, sheet_name='Automation', index_col=0)
 
 """Create All lists and dictionaries"""
@@ -116,15 +116,15 @@ def update_date(monthinput='', yearinput=''):
 
 def check_reports():
     counter = 0
-    wb = pd.read_excel(r"P:\PACS\Finance\Automation\PCC Reporting\pcc webscraping.xlsx", sheet_name='Automation',
+    wb = pd.read_excel(fr"P:\PACS\Finance\Automation\PCC Reporting\pcc webscraping.xlsx", sheet_name='Automation',
                        usecols=['Common Name', 'Business Unit'])
-    reports_path = [r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AP Aging',
-                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Aging',
-                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Rollforward',
-                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Cash Receipts',
-                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Census',
-                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Journal Entries',
-                    r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation']
+    reports_path = [r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - AP Aging',
+                    r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - AR Aging',
+                    r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - AR Rollforward',
+                    r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - Cash Receipts',
+                    r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - Census',
+                    r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - Journal Entries',
+                    r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - Revenue Reconciliation']
     report_names = ['AP Aging.xlsx', 'AR Aging.xlsx', 'AR Rollforward.xlsx', 'Cash Receipts.pdf',
                     'Census.pdf', 'Journal Entries.pdf', 'Revenue Reconciliation.pdf']
     print("Searching monthly reports")
@@ -210,25 +210,25 @@ def check_if_downloaded(facility, report):
     time.sleep(3)
     if report == "Cash Receipts":
         report_name = "Cash Receipts.pdf"
-        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Cash Receipts'
+        report_path = r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - Cash Receipts'
     elif report == "AP Aging":
         report_name = "AP Aging.xlsx"
-        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AP Aging'
+        report_path = r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - AP Aging'
     elif report == "AR Aging":
         report_name = "AR Aging.xlsx"
-        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Aging'
+        report_path = r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - AR Aging'
     elif report == "AR Rollforward":
         report_name = "AR Rollforward.xlsx"
-        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\AR Rollforward'
+        report_path = r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - AR Rollforward'
     elif report == "Census":
         report_name = "Census.pdf"
-        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Census'
+        report_path = r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - Census'
     elif report == "Journal Entries":
         report_name = "Journal Entries.pdf"
-        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Journal Entries'
+        report_path = r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - Journal Entries'
     elif report == "Revenue Reconciliation":
         report_name = "Revenue Reconciliation.pdf"
-        report_path = r'P:\PACS\Finance\Month End Close\All - Month End Reporting\Revenue Reconciliation'
+        report_path = r'P:\PACS\Finance\Month End Close\1- All - Month End Reporting\2023 - Revenue Reconciliation'
     else:
         report_name = "Issue identifying report"
         report_path = "Issue identifying report"
@@ -400,7 +400,7 @@ class LoginPCC:
             try:
                 alert = self.driver.switch_to.alert
                 alert.accept()
-                pyperclip.copy("Fiscal period has not been setup for this entity.  No transactions recorded.")
+                pyperclip.copy("Fiscal calendar has not been defined for the current date.")
                 wb = xw.Book()  # new workbook
                 app = xw.apps.active
                 time.sleep(2)
@@ -410,7 +410,7 @@ class LoginPCC:
                 wb.sheets[0].range("A1:P20").color = (102, 153, 255)
                 wb.sheets[0].range("A1:P20").api.Font.Bold = True
                 time.sleep(2)  # wait to load
-                wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AP Aging\\" +
+                wb.save("P:\\PACS\\Finance\\Month End Close\\1- All - Month End Reporting\\2023 - AP Aging\\" +
                         str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                 app.quit()
                 print(facname + ' AP aging saved to shared drive')
@@ -452,7 +452,7 @@ class LoginPCC:
             app.api.Application.Run("xl_paste")
             win_wb.VBProject.VBComponents.Remove(module)
             try:
-                wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AP Aging\\" +
+                wb.save("P:\\PACS\\Finance\\Month End Close\\1- All - Month End Reporting\\2023 - AP Aging\\" +
                         str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AP Aging.xlsx')
                 app.quit()
                 print(facname + ' AP aging saved to shared drive')
@@ -511,7 +511,7 @@ class LoginPCC:
                 convert_to_xlsx()  # change format from xls to xlsx
                 try:
                     renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + " AR Aging",
-                                         "P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AR Aging\\")
+                                         "P:\\PACS\\Finance\\Month End Close\\1- All - Month End Reporting\\2023 - AR Aging\\")
                 except:
                     print('Issue moving and renaming the file')
             except:
@@ -560,7 +560,7 @@ class LoginPCC:
             app.api.Application.Run("xl_paste")
             win_wb.VBProject.VBComponents.Remove(module)
             try:
-                wb.save("P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\AR Rollforward\\" +
+                wb.save("P:\\PACS\\Finance\\Month End Close\\1- All - Month End Reporting\\2023 - AR Rollforward\\" +
                         str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' AR Rollforward.xlsx')
                 app.quit()
                 print(facname + ' AR Rollforward saved to shared drive')
@@ -616,7 +616,7 @@ class LoginPCC:
             time.sleep(3)
             self.close_all_windows(window_before)
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Cash Receipts',
-                                 'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Cash Receipts\\')
+                                 'P:\\PACS\\Finance\\Month End Close\\1- All - Month End Reporting\\2023 - Cash Receipts\\')
         except:
             print('Issue downloading Cash Receipts: ' + facname)
 
@@ -658,7 +658,7 @@ class LoginPCC:
             time.sleep(5)
             self.close_all_windows(window_before)
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Census',
-                                 'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Census\\')
+                                 'P:\\PACS\\Finance\\Month End Close\\1- All - Month End Reporting\\2023 - Census\\')
         except:
             print('Issue downloading Census: ' + facname)
 
@@ -681,7 +681,7 @@ class LoginPCC:
             self.driver.find_element(By.ID, "runButton").click()
             time.sleep(20)
             renameDownloadedFile(str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Journal Entries',
-                                 'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Journal Entries\\')
+                                 'P:\\PACS\\Finance\\Month End Close\\1- All - Month End Reporting\\2023 - Journal Entries\\')
         except:
             print('Issue downloading Journal Entries: ' + facname)
 
@@ -720,14 +720,14 @@ class LoginPCC:
             self.close_all_windows(window_before)
             renameDownloadedFile(
                 str(report_year) + ' ' + prev_month_num_str + ' ' + facname + ' Revenue Reconciliation',
-                'P:\\PACS\\Finance\\Month End Close\\All - Month End Reporting\\Revenue Reconciliation\\')
+                'P:\\PACS\\Finance\\Month End Close\\1- All - Month End Reporting\\2023 - Revenue Reconciliation\\')
         except:
             print('Issue downloading Revenue Reconciliation: ' + facname)
 
     def change_fiscal_period(self, facname, period_oc):
         """Open the fiscal period in PCC"""
         try:
-            years = ['2020', '2021', '2022']
+            years = ['2020', '2021', '2022', '2023']
             list_of_dates = ['12/1/2020', '2/1/2021', '12/1/2021', '2/1/2022']
             window_before = self.driver.window_handles[0]  # make window tab object
             time.sleep(1)
